@@ -365,6 +365,22 @@ export function createExcursion(excursion: Omit<Excursion, 'id'>): Excursion {
     const data = loadData();
     const newExcursion: Excursion = { ...excursion, id: generateId() };
     data.excursions.push(newExcursion);
+
+    // Auto-create expense
+    if (newExcursion.costAmount && newExcursion.costAmount > 0) {
+        data.expenses.push({
+            id: generateId(),
+            tripId: newExcursion.tripId,
+            date: newExcursion.date,
+            description: `Activity: ${newExcursion.title}`,
+            category: 'excursion',
+            amount: newExcursion.costAmount,
+            currency: newExcursion.costCurrency || 'USD',
+            linkedType: 'excursion',
+            linkedId: newExcursion.id
+        });
+    }
+
     saveData(data);
     return newExcursion;
 }
@@ -375,8 +391,37 @@ export function updateExcursion(id: string, updates: Partial<Excursion>): Excurs
     if (index === -1) return undefined;
 
     data.excursions[index] = { ...data.excursions[index], ...updates };
+    const updatedExcursion = data.excursions[index];
+
+    // Sync expense
+    const expenseIndex = data.expenses.findIndex(e => e.linkedId === id && e.linkedType === 'excursion');
+
+    if (updatedExcursion.costAmount && updatedExcursion.costAmount > 0) {
+        const expenseData: Partial<Expense> = {
+            date: updatedExcursion.date,
+            description: `Activity: ${updatedExcursion.title}`,
+            amount: updatedExcursion.costAmount,
+            currency: updatedExcursion.costCurrency || 'USD',
+        };
+
+        if (expenseIndex !== -1) {
+            data.expenses[expenseIndex] = { ...data.expenses[expenseIndex], ...expenseData };
+        } else {
+            data.expenses.push({
+                id: generateId(),
+                tripId: updatedExcursion.tripId,
+                category: 'excursion',
+                linkedType: 'excursion',
+                linkedId: updatedExcursion.id,
+                ...expenseData
+            } as Expense);
+        }
+    } else if (expenseIndex !== -1) {
+        data.expenses.splice(expenseIndex, 1);
+    }
+
     saveData(data);
-    return data.excursions[index];
+    return updatedExcursion;
 }
 
 export function deleteExcursion(id: string): boolean {
@@ -385,6 +430,10 @@ export function deleteExcursion(id: string): boolean {
     if (index === -1) return false;
 
     data.excursions.splice(index, 1);
+
+    // Remove linked expense
+    data.expenses = data.expenses.filter(e => !(e.linkedId === id && e.linkedType === 'excursion'));
+
     saveData(data);
     return true;
 }
