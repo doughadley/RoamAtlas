@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel } from '@/components/layout';
 import { TripCalendar, aggregateCalendarEvents } from '@/components/calendar';
-import { Trip, getTrip, getFlights, getAccommodations, getExcursions, getCars, getTrains } from '@/lib/dataService';
+import { Trip } from '@/types';
+import { getTrip, getFlights, getAccommodations, getExcursions, getCars, getTrains } from '@/lib/dataService';
 import { Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
