@@ -1,0 +1,261 @@
+This product will be a web-based trip management dashboard that lets travelers organize every element of a trip in one place, including a calendar view that shows all daily activities and bookings. The core target user is a frequent planner who wants a single source of truth for itinerary and expenses.
+
+## 1. Product overview
+
+**Goal**
+
+- Provide a unified travel workspace where users can create trips and manage flights, accommodations, transport, excursions, and expenses.
+- Offer a calendar window that visually aggregates all activities (flights, check-ins, check-outs, excursions, etc.) per day and time.
+- Enable quick access to each trip section via a sidebar with a main panel for detailed views and editing.
+
+**Target users**
+
+- Individual travelers or couples who plan and track their own trips.
+- Travel content creators or planners who manage multiple trips and need structured organization.
+- Power users who appreciate good information architecture and data consistency.
+
+**Platforms / tech constraints**
+
+- Web application built with:
+  - Next.js for the main app and routing.
+  - Tailwind CSS for UI layout and styling (sidebar, calendar, forms, cards).
+  - Firebase for authentication, data storage, and possibly file storage.
+  - Vite used optionally for component development/storybook, but not as the main app runtime.
+
+## 2. Key user stories
+
+### Trip management
+
+- As a user, I can create, edit, and archive trips with a name, destination(s), start/end dates, and notes.
+- As a user, I can see a list of my trips in the sidebar or a dedicated “All Trips” page.
+- As a user, I can mark one trip as the “current trip” to quickly access it from the sidebar.
+
+### Calendar & itinerary
+
+- As a user, I can see a calendar window showing all activities and bookings for the selected trip.
+- As a user, I can switch calendar views (day, week, month) to adjust the level of detail.
+- As a user, I can see flights, accommodations, cars, trains, and excursions on the calendar at their correct dates/times.
+- As a user, I can click an item on the calendar to open its details in the main panel (or a side drawer).
+- As a user, I can filter what appears on the calendar (e.g., show/hide expenses, show only flights and excursions).
+- As a user, I can quickly navigate between trip days to see a timeline of activities.
+
+### Flights
+
+- As a user, I can add flights with airline, flight number, origin, destination, departure/arrival date and time, confirmation code, and cost.
+- As a user, I can see a list of all flights for a trip in the Flights section, sorted chronologically.
+- As a user, I can edit or delete existing flights.
+- As a user, I can see each flight on the calendar at its departure and arrival times (at minimum, departure).
+
+### Accommodations
+
+- As a user, I can add accommodations with property name, address, check-in/check-out dates and times, confirmation number, and cost.
+- As a user, I can see accommodations as multi-day blocks on the calendar spanning check-in to check-out.
+- As a user, I can see all accommodations for a trip in a list or card view in the main panel.
+
+### Car rental
+
+- As a user, I can add car rentals with pickup/drop-off locations, dates and times, rental company, confirmation, and cost.
+- As a user, I can see car rental pickup/drop-off on the calendar as events and optionally a bar spanning the rental period.
+
+### Trains
+
+- As a user, I can add train journeys with operator, train number, origin, destination, departure/arrival times, seat info, and cost.
+- As a user, I can see train journeys as time-specific entries on the calendar.
+
+### Excursions / activities
+
+- As a user, I can add excursions and activities with title, date, start/end times, meeting location, provider, notes, and cost.
+- As a user, I can see excursions on the calendar as blocks at their scheduled times.
+- As a user, I can categorize activities (e.g., tour, museum, reservation, personal) and filter them on the calendar.
+
+### Expenses
+
+- As a user, I can record expenses linked to a trip (and optionally to a specific category like flight, accommodation, transport, excursion, or “other”).
+- As a user, I can define fields like date, description, category, amount, currency, and payment method.
+- As a user, I can see a summarized view of total trip expenses and breakdown by category.
+- As a user, I can optionally show expenses as small markers on the calendar on the date they occur.
+
+### Authentication and multi-trip
+
+- As a user, I can sign in (e.g., email/password or OAuth) so that my trips are private and persist across devices.
+- As a user, I can sign out and sign in from another device and still access all trips.
+- As a user, I can share a read-only link (future enhancement) to a trip itinerary.
+
+## 3. Information architecture
+
+### Navigation (sidebar)
+
+- Global sections:
+  - App logo / title.
+  - “All Trips”.
+  - “Current Trip”.
+- Current trip subsections:
+  - Overview (summary + calendar window).
+  - Flights.
+  - Accommodations.
+  - Car rental.
+  - Trains.
+  - Excursions.
+  - Expenses.
+  - Settings / Notes (optional).
+
+### Main panel
+
+- Route-based content:
+  - `/trips`: list of all trips with create button.
+  - `/trips/[tripId]` (Overview): summary cards + calendar.
+  - `/trips/[tripId]/flights`: flights list + add/edit form.
+  - `/trips/[tripId]/accommodations`: accommodations list + add/edit form.
+  - `/trips/[tripId]/cars`: car rentals list + add/edit form.
+  - `/trips/[tripId]/trains`: trains list + add/edit form.
+  - `/trips/[tripId]/excursions`: excursions list + add/edit form.
+  - `/trips/[tripId]/expenses`: expenses list, filters, and totals.
+
+## 4. Data model (conceptual)
+
+At a high level, with a document-based store:
+
+- `users`
+  - `id`
+  - profile basics
+
+- `trips`
+  - `id`
+  - `userId`
+  - `name`
+  - `primaryDestination`
+  - `startDate`
+  - `endDate`
+  - `status` (active, archived)
+  - `notes`
+
+- `trips/{tripId}/flights`
+  - `origin`
+  - `destination`
+  - `airline`
+  - `flightNumber`
+  - `departureDateTime`
+  - `arrivalDateTime`
+  - `confirmationNumber`
+  - `costAmount`
+  - `costCurrency`
+
+- `trips/{tripId}/accommodations`
+  - `propertyName`
+  - `address`
+  - `checkInDateTime`
+  - `checkOutDateTime`
+  - `confirmationNumber`
+  - `costAmount`
+  - `costCurrency`
+
+- `trips/{tripId}/cars`
+  - `pickupLocation`
+  - `dropoffLocation`
+  - `pickupDateTime`
+  - `dropoffDateTime`
+  - `company`
+  - `confirmationNumber`
+  - `costAmount`
+  - `costCurrency`
+
+- `trips/{tripId}/trains`
+  - `origin`
+  - `destination`
+  - `operator`
+  - `trainNumber`
+  - `departureDateTime`
+  - `arrivalDateTime`
+  - `seatInfo`
+  - `costAmount`
+  - `costCurrency`
+
+- `trips/{tripId}/excursions`
+  - `title`
+  - `category`
+  - `date`
+  - `startTime`
+  - `endTime`
+  - `location`
+  - `provider`
+  - `notes`
+  - `costAmount`
+  - `costCurrency`
+
+- `trips/{tripId}/expenses`
+  - `date`
+  - `description`
+  - `category` (flight, accommodation, transport, excursion, food, other)
+  - `amount`
+  - `currency`
+  - `linkedType` (optional: flight/accommodation/etc.)
+  - `linkedId` (optional)
+
+Calendar events can be derived on the fly from these collections by mapping each record into a unified “event” shape in the UI layer (type, title, start, end, color).
+
+## 5. Calendar requirements
+
+### Functional requirements
+
+- Calendar is visible on the trip Overview page at minimum; optionally also on a dedicated “Calendar” tab.
+- Calendar supports at least:
+  - Month view: high-level overview of which days have activity.
+  - Day or week view: detailed view with time-based layout.
+- Event types shown:
+  - Flights (emphasized, e.g., distinct color or icon).
+  - Accommodation stays (multi-day bars).
+  - Car rentals and trains (time-based events).
+  - Excursions/activities (time blocks).
+  - Optional expense markers (e.g., dot or icon at bottom of date cell).
+- Each event:
+  - Is clickable to open detail view or form for editing.
+  - Shows a concise title and relevant icon (plane, bed, car, train, ticket).
+  - Can display start time; end time optional in compact view.
+
+### Interaction requirements
+
+- Filters:
+  - Checkbox or pill filters for event types (Flights, Stays, Transport, Excursions, Expenses).
+  - “Show only today’s events” quick toggle in day/week view.
+- Navigation:
+  - Controls to move between months/weeks/days.
+  - “Today” button to jump back to the current date.
+  - Trip date range highlighted; dates outside trip range grayed or disabled.
+- Performance expectations:
+  - Calendar should load only events for the selected trip.
+  - Events fetched once per trip selection and cached client-side where reasonable.
+
+### Visual / UX requirements
+
+- Calendar window placed prominently in the main panel, with responsive design:
+  - On desktop: calendar on left/top, detail panel or list on right/below.
+  - On small screens: stacked with calendar on top and list/details below.
+- Consistent color coding:
+  - Flights: e.g., blue.
+  - Accommodations: e.g., green.
+  - Car/trains: e.g., orange.
+  - Excursions: e.g., purple.
+  - Expenses: subtle accent (small dot).
+
+## 6. Non-functional requirements
+
+- Authentication:
+  - Basic, secure sign-in; all trip data is scoped to the authenticated user.
+- Performance:
+  - Initial load for current trip (overview + calendar) within an acceptable time on typical connections.
+- Reliability:
+  - Trip data persisted in a managed backend (Firebase).
+- Security:
+  - Access control enforced so users cannot see others’ trips.
+- Usability:
+  - Intuitive navigation via sidebar.
+  - Quick add/edit flows with minimal required fields and the ability to refine later.
+
+## 7. Open questions / future enhancements
+
+- Do you want collaborative trips (multi-user access)?
+- Should there be offline support or mobile PWAs?
+- Should the calendar support drag-and-drop to adjust times/dates?
+- Should there be AI-assisted itinerary suggestions or automatic parsing from confirmation emails?
+
+If you want, the next step can be turning this PRD into a concrete screen map and a backlog of v1.0 tasks (MVP) versus later-phase features.
