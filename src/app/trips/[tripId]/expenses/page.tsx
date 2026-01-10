@@ -1,33 +1,98 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
-import { Receipt, Plus } from 'lucide-react';
+import { Sidebar, MainPanel, TripTabs, TripBackground } from '@/components/layout';
+import { ExpenseSummary, ExpenseList, ExpenseModal } from '@/components/expenses';
+import { getExpenses, getTrip, deleteExpense, Trip, Expense } from '@/lib/dataService';
+import { Plus } from 'lucide-react';
 
 export default function ExpensesPage() {
     const params = useParams();
     const tripId = params.tripId as string;
 
+    const [trip, setTrip] = useState<Trip | null>(null);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+
+    const loadData = useCallback(() => {
+        setTrip(getTrip(tripId) || null);
+        setExpenses(getExpenses(tripId));
+    }, [tripId]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const handleCreate = () => {
+        setEditingExpense(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (expense: Expense) => {
+        setEditingExpense(expense);
+        setIsModalOpen(true);
+    };
+
+    const handleDelete = (expense: Expense) => {
+        if (confirm('Delete this expense?')) {
+            deleteExpense(expense.id);
+            loadData();
+        }
+    };
+
+    const handleSave = () => {
+        loadData();
+    };
+
+    if (!trip) return null;
+
     return (
-        <>
+        <TripBackground destination={trip.primaryDestination}>
             <Sidebar />
             <MainPanel
                 title="Expenses"
-                subtitle="Track your trip spending"
+                subtitle="Track and analyze your trip spending"
                 actions={
-                    <button className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Add Expense</button>
+                    <button onClick={handleCreate} className="btn-primary flex items-center gap-2">
+                        <Plus className="w-5 h-5" />
+                        Add Expense
+                    </button>
                 }
             >
                 <TripTabs tripId={tripId} />
 
-                <div className="glass-panel p-12 text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-[var(--text-muted)]/20 mx-auto mb-6 flex items-center justify-center">
-                        <Receipt className="w-10 h-10 text-[var(--text-muted)]" />
+                <div className="space-y-8 animate-slide-up">
+                    <ExpenseSummary expenses={expenses} />
+
+                    <div className="mt-8">
+                        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">Transactions</h3>
+                        {expenses.length > 0 ? (
+                            <ExpenseList
+                                expenses={expenses}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
+                        ) : (
+                            <div className="glass-panel p-12 text-center">
+                                <p className="text-[var(--text-secondary)]">No expenses added yet.</p>
+                                <button onClick={handleCreate} className="mt-4 text-[var(--accent-blue)] hover:underline">
+                                    Add your first expense
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">Expense Tracking Coming Soon</h2>
-                    <p className="text-[var(--text-secondary)]">This feature is planned for Phase 5.</p>
                 </div>
+
+                <ExpenseModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    tripId={tripId}
+                    expense={editingExpense}
+                    onSave={handleSave}
+                />
             </MainPanel>
-        </>
+        </TripBackground>
     );
 }
