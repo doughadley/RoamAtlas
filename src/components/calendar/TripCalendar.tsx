@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Plane, Building2, Ticket, Car, Train } from 'lucide-react';
 import { CalendarEvent, getMonthDates, getEventsForDate } from './calendarUtils';
+import DayModal from './DayModal';
 
 interface TripCalendarProps {
     events: CalendarEvent[];
@@ -28,7 +29,10 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
     const tripStart = new Date(tripStartDate);
     const [currentMonth, setCurrentMonth] = useState(tripStart.getMonth());
     const [currentYear, setCurrentYear] = useState(tripStart.getFullYear());
-    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+    // Day modal state
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [dayModalOpen, setDayModalOpen] = useState(false);
 
     const monthDates = useMemo(() => getMonthDates(currentYear, currentMonth), [currentYear, currentMonth]);
 
@@ -69,6 +73,13 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
         return date.toISOString().split('T')[0];
     };
 
+    const handleDayClick = (date: Date) => {
+        setSelectedDate(date);
+        setDayModalOpen(true);
+    };
+
+    const selectedDateEvents = selectedDate ? getEventsForDate(events, formatDateKey(selectedDate)) : [];
+
     return (
         <div className="glass-panel p-6">
             {/* Header */}
@@ -105,13 +116,14 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
                     return (
                         <div
                             key={idx}
+                            onClick={() => handleDayClick(date)}
                             className={`
-                min-h-[100px] p-2 rounded-lg border transition-all cursor-pointer
-                ${isCurrentMonth ? 'bg-[var(--bg-glass)]' : 'bg-transparent opacity-40'}
-                ${inTrip ? 'border-[var(--accent-cyan)]/30' : 'border-[var(--border-glass)]'}
-                ${today ? 'ring-2 ring-[var(--accent-cyan)]' : ''}
-                hover:bg-[var(--bg-glass-hover)]
-              `}
+                                min-h-[100px] p-2 rounded-lg border transition-all cursor-pointer
+                                ${isCurrentMonth ? 'bg-[var(--bg-glass)]' : 'bg-transparent opacity-40'}
+                                ${inTrip ? 'border-[var(--accent-cyan)]/30' : 'border-[var(--border-glass)]'}
+                                ${today ? 'ring-2 ring-[var(--accent-cyan)]' : ''}
+                                hover:bg-[var(--bg-glass-hover)] hover:border-[var(--accent-cyan)]/50
+                            `}
                         >
                             <div className={`text-sm font-medium mb-1 ${today ? 'text-[var(--accent-cyan)]' : isCurrentMonth ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
                                 {date.getDate()}
@@ -124,12 +136,7 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
                                     return (
                                         <div
                                             key={event.id}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedEvent(event);
-                                                onEventClick?.(event);
-                                            }}
-                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs truncate cursor-pointer hover:opacity-80 transition-opacity"
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs truncate"
                                             style={{ background: `${event.color}30`, color: event.color }}
                                             title={event.title}
                                         >
@@ -149,46 +156,6 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
                 })}
             </div>
 
-            {/* Event Detail Popup */}
-            {selectedEvent && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setSelectedEvent(null)}>
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                    <div className="glass-panel relative z-10 p-6 max-w-md mx-4 animate-slide-up" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                style={{ background: `${selectedEvent.color}20` }}
-                            >
-                                {(() => {
-                                    const Icon = IconMap[selectedEvent.icon];
-                                    return <Icon className="w-5 h-5" style={{ color: selectedEvent.color }} />;
-                                })()}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-[var(--text-primary)]">{selectedEvent.title}</h3>
-                                {selectedEvent.subtitle && <p className="text-sm text-[var(--text-secondary)]">{selectedEvent.subtitle}</p>}
-                            </div>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                            <p className="text-[var(--text-secondary)]">
-                                <span className="text-[var(--text-muted)]">Date:</span> {new Date(selectedEvent.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                            </p>
-                            {selectedEvent.startTime && (
-                                <p className="text-[var(--text-secondary)]">
-                                    <span className="text-[var(--text-muted)]">Time:</span> {selectedEvent.startTime}{selectedEvent.endTime && ` - ${selectedEvent.endTime}`}
-                                </p>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => setSelectedEvent(null)}
-                            className="mt-4 w-full glass-button py-2"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Legend */}
             <div className="mt-6 pt-4 border-t border-[var(--border-glass)] flex flex-wrap gap-4">
                 <div className="flex items-center gap-2 text-sm">
@@ -207,7 +174,19 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
                     <div className="w-3 h-3 rounded" style={{ background: 'var(--accent-orange)' }} />
                     <span className="text-[var(--text-secondary)]">Transport</span>
                 </div>
+                <div className="ml-auto text-xs text-[var(--text-muted)]">
+                    Click on any day to see details
+                </div>
             </div>
+
+            {/* Day Modal */}
+            <DayModal
+                isOpen={dayModalOpen}
+                onClose={() => setDayModalOpen(false)}
+                date={selectedDate || new Date()}
+                events={selectedDateEvents}
+                isInTripRange={selectedDate ? isInTripRange(selectedDate) : false}
+            />
         </div>
     );
 }
