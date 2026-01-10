@@ -1,14 +1,17 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Sidebar, MainPanel } from '@/components/layout';
 import { TripModal, TripCard } from '@/components/trips';
 import { useTrips } from '@/contexts/TripContext';
-import { Trip, deleteTrip, updateTrip } from '@/lib/dataService';
-import { Plus, MapPin, Archive, Filter } from 'lucide-react';
+import { deleteTrip, updateTrip } from '@/lib/dataService';
+import { Trip } from '@/types';
+import { Plus, MapPin, Archive } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TripsPage() {
+    const router = useRouter();
     const { trips, currentTrip, refreshTrips, setCurrentTrip } = useTrips();
     const [showTripModal, setShowTripModal] = useState(false);
     const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
@@ -50,8 +53,12 @@ export default function TripsPage() {
         setCurrentTrip(trip.id);
     };
 
-    const handleTripSaved = () => {
+    const handleTripSaved = (savedTrip: Trip) => {
         refreshTrips();
+        // If it's a new trip (not editing), redirect to it immediately
+        if (!editingTrip) {
+            router.push(`/trips/${savedTrip.id}`);
+        }
     };
 
     return (
