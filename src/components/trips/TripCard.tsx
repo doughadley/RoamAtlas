@@ -1,6 +1,6 @@
 'use client';
 
-import { Trip } from '@/lib/dataService';
+import { Trip } from '@/types';
 import { MapPin, Calendar, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
