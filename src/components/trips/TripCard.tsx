@@ -25,9 +25,15 @@ export default function TripCard({
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Calculate trip duration
-    const startDate = new Date(trip.startDate);
-    const endDate = new Date(trip.endDate);
-    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Parse "YYYY-MM-DD" explicitly to avoid timezone shifts
+    const parseDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    };
+
+    const startDate = parseDate(trip.startDate);
+    const endDate = parseDate(trip.endDate);
+    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1; // Inclusive duration
 
     // Format dates
     const formatDate = (date: Date) => {
