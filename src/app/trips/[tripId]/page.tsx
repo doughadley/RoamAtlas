@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
+import { Sidebar, MainPanel, TripTabs, TripBackground } from '@/components/layout';
 import { useTrips } from '@/contexts/TripContext';
 import { Trip } from '@/types';
 import { getTrip, getTripStats } from '@/lib/dataService';
@@ -101,7 +101,7 @@ export default function TripOverviewPage() {
     };
 
     return (
-        <>
+        <TripBackground destination={trip.primaryDestination}>
             <Sidebar />
             <MainPanel
                 title={trip.name}
@@ -202,6 +202,6 @@ export default function TripOverviewPage() {
                 trip={trip}
                 onSave={handleTripUpdated}
             />
-        </>
+        </TripBackground>
     );
 }
