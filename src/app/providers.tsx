@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { TripProvider } from '@/contexts/TripContext';
 
 interface ProvidersProps {
     children: ReactNode;
@@ -10,7 +11,9 @@ interface ProvidersProps {
 export default function Providers({ children }: ProvidersProps) {
     return (
         <AuthProvider>
-            {children}
+            <TripProvider>
+                {children}
+            </TripProvider>
         </AuthProvider>
     );
 }

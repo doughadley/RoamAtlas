@@ -1,17 +1,28 @@
-import { Sidebar, MainPanel } from '@/components/layout';
-import { Plane, Building2, Car, Ticket, Receipt, MapPin, Plus } from 'lucide-react';
+'use client';
 
-// Temporary stats data
-const stats = [
-  { label: 'Trips', value: '0', icon: MapPin, color: 'var(--accent-cyan)' },
-  { label: 'Flights', value: '0', icon: Plane, color: 'var(--accent-blue)' },
-  { label: 'Stays', value: '0', icon: Building2, color: 'var(--accent-green)' },
-  { label: 'Rentals', value: '0', icon: Car, color: 'var(--accent-orange)' },
-  { label: 'Activities', value: '0', icon: Ticket, color: 'var(--accent-purple)' },
-  { label: 'Expenses', value: '$0', icon: Receipt, color: 'var(--text-muted)' },
-];
+import { useState } from 'react';
+import { Sidebar, MainPanel } from '@/components/layout';
+import { TripModal, TripCard } from '@/components/trips';
+import { useTrips } from '@/contexts/TripContext';
+import { Plane, Building2, Car, Ticket, Receipt, MapPin, Plus, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
+  const { trips, currentTrip } = useTrips();
+  const [showTripModal, setShowTripModal] = useState(false);
+
+  const activeTrips = trips.filter(t => t.status === 'active');
+
+  // Stats from all trips
+  const stats = [
+    { label: 'Trips', value: activeTrips.length, icon: MapPin, color: 'var(--accent-cyan)' },
+    { label: 'Flights', value: 0, icon: Plane, color: 'var(--accent-blue)' },
+    { label: 'Stays', value: 0, icon: Building2, color: 'var(--accent-green)' },
+    { label: 'Rentals', value: 0, icon: Car, color: 'var(--accent-orange)' },
+    { label: 'Activities', value: 0, icon: Ticket, color: 'var(--accent-purple)' },
+    { label: 'Expenses', value: '$0', icon: Receipt, color: 'var(--text-muted)' },
+  ];
+
   return (
     <>
       <Sidebar />
@@ -19,7 +30,7 @@ export default function Home() {
         title="Welcome to RoamAtlas"
         subtitle="Your unified travel workspace for organizing trips, bookings, and expenses."
         actions={
-          <button className="btn-primary flex items-center gap-2">
+          <button onClick={() => setShowTripModal(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-5 h-5" />
             Create Trip
           </button>
@@ -47,29 +58,48 @@ export default function Home() {
           })}
         </div>
 
-        {/* Get Started Section */}
-        <div className="glass-panel p-8 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-cyan)] mx-auto mb-6 flex items-center justify-center shadow-lg">
-            <MapPin className="w-10 h-10 text-white" />
+        {/* Recent Trips or Get Started */}
+        {activeTrips.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[var(--text-primary)]">Recent Trips</h2>
+              <Link href="/trips" className="text-[var(--accent-cyan)] hover:underline text-sm flex items-center gap-1">
+                View all <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {activeTrips.slice(0, 3).map((trip) => (
+                <Link key={trip.id} href={`/trips/${trip.id}`}>
+                  <TripCard trip={trip} isSelected={currentTrip?.id === trip.id} />
+                </Link>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="glass-panel p-8 text-center mb-8">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-cyan)] mx-auto mb-6 flex items-center justify-center shadow-lg">
+              <MapPin className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">
+              Ready to plan your next adventure?
+            </h2>
+            <p className="text-[var(--text-secondary)] mb-6 max-w-md mx-auto">
+              Create your first trip to start organizing flights, accommodations, activities, and expenses all in one place.
+            </p>
+            <button onClick={() => setShowTripModal(true)} className="btn-primary text-lg px-8 py-3">
+              <span className="flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                Create Your First Trip
+              </span>
+            </button>
           </div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">
-            Ready to plan your next adventure?
-          </h2>
-          <p className="text-[var(--text-secondary)] mb-6 max-w-md mx-auto">
-            Create your first trip to start organizing flights, accommodations, activities, and expenses all in one place.
-          </p>
-          <button className="btn-primary text-lg px-8 py-3">
-            <span className="flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Create Your First Trip
-            </span>
-          </button>
-        </div>
+        )}
 
         {/* Features Preview */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">What You Can Do</h2>
+        <div className="grid md:grid-cols-3 gap-6">
           <div className="glass-card p-6">
-            <div className="w-10 h-10 rounded-lg bg-[var(--accent-blue)]20 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-blue)]/20 flex items-center justify-center mb-4">
               <Plane className="w-5 h-5 text-[var(--accent-blue)]" />
             </div>
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
@@ -81,7 +111,7 @@ export default function Home() {
           </div>
 
           <div className="glass-card p-6">
-            <div className="w-10 h-10 rounded-lg bg-[var(--accent-purple)]20 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-purple)]/20 flex items-center justify-center mb-4">
               <Ticket className="w-5 h-5 text-[var(--accent-purple)]" />
             </div>
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
@@ -93,7 +123,7 @@ export default function Home() {
           </div>
 
           <div className="glass-card p-6">
-            <div className="w-10 h-10 rounded-lg bg-[var(--accent-green)]20 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-green)]/20 flex items-center justify-center mb-4">
               <Receipt className="w-5 h-5 text-[var(--accent-green)]" />
             </div>
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
@@ -105,6 +135,9 @@ export default function Home() {
           </div>
         </div>
       </MainPanel>
+
+      {/* Trip Modal */}
+      <TripModal isOpen={showTripModal} onClose={() => setShowTripModal(false)} />
     </>
   );
 }

@@ -17,23 +17,27 @@ import {
     ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTrips } from '@/contexts/TripContext';
 import { UserMenu, AuthModal } from '@/components/auth';
-
-// Navigation items for the current trip
-const tripNavItems = [
-    { href: '/trips', icon: LayoutDashboard, label: 'Overview' },
-    { href: '/trips/flights', icon: Plane, label: 'Flights' },
-    { href: '/trips/accommodations', icon: Building2, label: 'Accommodations' },
-    { href: '/trips/cars', icon: Car, label: 'Car Rental' },
-    { href: '/trips/trains', icon: Train, label: 'Trains' },
-    { href: '/trips/excursions', icon: Ticket, label: 'Excursions' },
-    { href: '/trips/expenses', icon: Receipt, label: 'Expenses' },
-];
+import { TripModal } from '@/components/trips';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
+    const { currentTrip, trips } = useTrips();
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showTripModal, setShowTripModal] = useState(false);
+
+    // Generate navigation items based on current trip
+    const tripNavItems = currentTrip ? [
+        { href: `/trips/${currentTrip.id}`, icon: LayoutDashboard, label: 'Overview' },
+        { href: `/trips/${currentTrip.id}/flights`, icon: Plane, label: 'Flights' },
+        { href: `/trips/${currentTrip.id}/accommodations`, icon: Building2, label: 'Accommodations' },
+        { href: `/trips/${currentTrip.id}/cars`, icon: Car, label: 'Car Rental' },
+        { href: `/trips/${currentTrip.id}/trains`, icon: Train, label: 'Trains' },
+        { href: `/trips/${currentTrip.id}/excursions`, icon: Ticket, label: 'Excursions' },
+        { href: `/trips/${currentTrip.id}/expenses`, icon: Receipt, label: 'Expenses' },
+    ] : [];
 
     return (
         <>
@@ -63,9 +67,12 @@ export default function Sidebar() {
                         className={`nav-item w-full ${pathname === '/trips' ? 'active' : ''}`}
                     >
                         <LayoutDashboard className="w-5 h-5" />
-                        <span>All Trips</span>
+                        <span>All Trips ({trips.filter(t => t.status === 'active').length})</span>
                     </Link>
-                    <button className="glass-button w-full mt-3 flex items-center justify-center gap-2 text-sm">
+                    <button
+                        onClick={() => setShowTripModal(true)}
+                        className="glass-button w-full mt-3 flex items-center justify-center gap-2 text-sm"
+                    >
                         <PlusCircle className="w-4 h-4" />
                         <span>New Trip</span>
                     </button>
@@ -77,42 +84,60 @@ export default function Sidebar() {
                         <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] px-3 mb-2">
                             Current Trip
                         </h2>
-                        <div className="glass-card p-3 mb-4">
-                            {isAuthenticated ? (
-                                <>
-                                    <p className="text-sm font-medium text-[var(--text-primary)]">No trip selected</p>
-                                    <p className="text-xs text-[var(--text-muted)] mt-1">Select or create a trip to get started</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-sm font-medium text-[var(--text-primary)]">Welcome, Guest</p>
-                                    <p className="text-xs text-[var(--text-muted)] mt-1">Sign in to save your trips</p>
-                                </>
-                            )}
-                        </div>
+                        {currentTrip ? (
+                            <Link href={`/trips/${currentTrip.id}`}>
+                                <div className="glass-card p-3 mb-4 hover:bg-[var(--bg-glass-hover)]">
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-[var(--accent-cyan)]" />
+                                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                                            {currentTrip.name}
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-[var(--text-muted)] mt-1 truncate">
+                                        {currentTrip.primaryDestination}
+                                    </p>
+                                </div>
+                            </Link>
+                        ) : (
+                            <div className="glass-card p-3 mb-4">
+                                {isAuthenticated ? (
+                                    <>
+                                        <p className="text-sm font-medium text-[var(--text-primary)]">No trip selected</p>
+                                        <p className="text-xs text-[var(--text-muted)] mt-1">Select or create a trip to get started</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-medium text-[var(--text-primary)]">Welcome, Guest</p>
+                                        <p className="text-xs text-[var(--text-muted)] mt-1">Sign in to save your trips</p>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Trip Navigation */}
-                    <nav className="space-y-1">
-                        {tripNavItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    {/* Trip Navigation - Only show if trip selected */}
+                    {currentTrip && (
+                        <nav className="space-y-1">
+                            {tripNavItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = pathname === item.href;
 
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`nav-item justify-between ${isActive ? 'active' : ''}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Icon className="w-5 h-5" />
-                                        <span>{item.label}</span>
-                                    </div>
-                                    <ChevronRight className={`w-4 h-4 opacity-0 transition-opacity ${isActive ? 'opacity-100' : 'group-hover:opacity-50'}`} />
-                                </Link>
-                            );
-                        })}
-                    </nav>
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`nav-item justify-between ${isActive ? 'active' : ''}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon className="w-5 h-5" />
+                                            <span>{item.label}</span>
+                                        </div>
+                                        <ChevronRight className={`w-4 h-4 opacity-0 transition-opacity ${isActive ? 'opacity-100' : ''}`} />
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    )}
                 </div>
 
                 {/* Settings Footer */}
@@ -124,8 +149,9 @@ export default function Sidebar() {
                 </div>
             </aside>
 
-            {/* Auth Modal */}
+            {/* Modals */}
             <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+            <TripModal isOpen={showTripModal} onClose={() => setShowTripModal(false)} />
         </>
     );
 }
