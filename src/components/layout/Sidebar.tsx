@@ -14,7 +14,8 @@ import {
     LayoutDashboard,
     PlusCircle,
     Settings,
-    ChevronRight
+    ChevronRight,
+    Calendar
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrips } from '@/contexts/TripContext';
@@ -31,6 +32,7 @@ export default function Sidebar() {
     // Generate navigation items based on current trip
     const tripNavItems = currentTrip ? [
         { href: `/trips/${currentTrip.id}`, icon: LayoutDashboard, label: 'Overview' },
+        { href: `/trips/${currentTrip.id}/calendar`, icon: Calendar, label: 'Calendar' },
         { href: `/trips/${currentTrip.id}/flights`, icon: Plane, label: 'Flights' },
         { href: `/trips/${currentTrip.id}/accommodations`, icon: Building2, label: 'Accommodations' },
         { href: `/trips/${currentTrip.id}/cars`, icon: Car, label: 'Car Rental' },
