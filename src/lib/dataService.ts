@@ -130,6 +130,22 @@ export function createFlight(flight: Omit<Flight, 'id'>): Flight {
     const data = loadData();
     const newFlight: Flight = { ...flight, id: generateId() };
     data.flights.push(newFlight);
+
+    // Auto-create expense
+    if (newFlight.costAmount && newFlight.costAmount > 0) {
+        data.expenses.push({
+            id: generateId(),
+            tripId: newFlight.tripId,
+            date: newFlight.departureDateTime.split('T')[0],
+            description: `Flight: ${newFlight.airline} (${newFlight.flightNumber})`,
+            category: 'flight',
+            amount: newFlight.costAmount,
+            currency: newFlight.costCurrency || 'USD',
+            linkedType: 'flight',
+            linkedId: newFlight.id
+        });
+    }
+
     saveData(data);
     return newFlight;
 }
@@ -140,8 +156,38 @@ export function updateFlight(id: string, updates: Partial<Flight>): Flight | und
     if (index === -1) return undefined;
 
     data.flights[index] = { ...data.flights[index], ...updates };
+    const updatedFlight = data.flights[index];
+
+    // Sync expense
+    const expenseIndex = data.expenses.findIndex(e => e.linkedId === id && e.linkedType === 'flight');
+
+    if (updatedFlight.costAmount && updatedFlight.costAmount > 0) {
+        const expenseData: Partial<Expense> = {
+            date: updatedFlight.departureDateTime.split('T')[0],
+            description: `Flight: ${updatedFlight.airline} (${updatedFlight.flightNumber})`,
+            amount: updatedFlight.costAmount,
+            currency: updatedFlight.costCurrency || 'USD',
+        };
+
+        if (expenseIndex !== -1) {
+            data.expenses[expenseIndex] = { ...data.expenses[expenseIndex], ...expenseData };
+        } else {
+            data.expenses.push({
+                id: generateId(),
+                tripId: updatedFlight.tripId,
+                category: 'flight',
+                linkedType: 'flight',
+                linkedId: updatedFlight.id,
+                ...expenseData
+            } as Expense);
+        }
+    } else if (expenseIndex !== -1) {
+        // Remove expense if cost is removed/zero
+        data.expenses.splice(expenseIndex, 1);
+    }
+
     saveData(data);
-    return data.flights[index];
+    return updatedFlight;
 }
 
 export function deleteFlight(id: string): boolean {
@@ -150,6 +196,10 @@ export function deleteFlight(id: string): boolean {
     if (index === -1) return false;
 
     data.flights.splice(index, 1);
+
+    // Remove linked expense
+    data.expenses = data.expenses.filter(e => !(e.linkedId === id && e.linkedType === 'flight'));
+
     saveData(data);
     return true;
 }
@@ -164,6 +214,22 @@ export function createAccommodation(accommodation: Omit<Accommodation, 'id'>): A
     const data = loadData();
     const newAccom: Accommodation = { ...accommodation, id: generateId() };
     data.accommodations.push(newAccom);
+
+    // Auto-create expense
+    if (newAccom.costAmount && newAccom.costAmount > 0) {
+        data.expenses.push({
+            id: generateId(),
+            tripId: newAccom.tripId,
+            date: newAccom.checkInDateTime.split('T')[0],
+            description: `Stay: ${newAccom.propertyName}`,
+            category: 'accommodation',
+            amount: newAccom.costAmount,
+            currency: newAccom.costCurrency || 'USD',
+            linkedType: 'accommodation',
+            linkedId: newAccom.id
+        });
+    }
+
     saveData(data);
     return newAccom;
 }
@@ -174,8 +240,37 @@ export function updateAccommodation(id: string, updates: Partial<Accommodation>)
     if (index === -1) return undefined;
 
     data.accommodations[index] = { ...data.accommodations[index], ...updates };
+    const updatedAccom = data.accommodations[index];
+
+    // Sync expense
+    const expenseIndex = data.expenses.findIndex(e => e.linkedId === id && e.linkedType === 'accommodation');
+
+    if (updatedAccom.costAmount && updatedAccom.costAmount > 0) {
+        const expenseData: Partial<Expense> = {
+            date: updatedAccom.checkInDateTime.split('T')[0],
+            description: `Stay: ${updatedAccom.propertyName}`,
+            amount: updatedAccom.costAmount,
+            currency: updatedAccom.costCurrency || 'USD',
+        };
+
+        if (expenseIndex !== -1) {
+            data.expenses[expenseIndex] = { ...data.expenses[expenseIndex], ...expenseData };
+        } else {
+            data.expenses.push({
+                id: generateId(),
+                tripId: updatedAccom.tripId,
+                category: 'accommodation',
+                linkedType: 'accommodation',
+                linkedId: updatedAccom.id,
+                ...expenseData
+            } as Expense);
+        }
+    } else if (expenseIndex !== -1) {
+        data.expenses.splice(expenseIndex, 1);
+    }
+
     saveData(data);
-    return data.accommodations[index];
+    return updatedAccom;
 }
 
 export function deleteAccommodation(id: string): boolean {
@@ -184,6 +279,10 @@ export function deleteAccommodation(id: string): boolean {
     if (index === -1) return false;
 
     data.accommodations.splice(index, 1);
+
+    // Remove linked expense
+    data.expenses = data.expenses.filter(e => !(e.linkedId === id && e.linkedType === 'accommodation'));
+
     saveData(data);
     return true;
 }
