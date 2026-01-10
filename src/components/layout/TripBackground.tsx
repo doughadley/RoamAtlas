@@ -25,9 +25,9 @@ function getDestinationImageUrl(destination: string): string {
 // Curated images - ARRAY ORDER MATTERS! More specific locations come first
 const DESTINATION_IMAGES: [string, string][] = [
     // Specific cities/regions first (most specific)
-    ['chamonix', 'https://images.unsplash.com/photo-1522199710521-72d69614c702?w=1920&q=80'],
-    ['mont blanc', 'https://images.unsplash.com/photo-1522199710521-72d69614c702?w=1920&q=80'],
-    ['alps', 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1920&q=80'],
+    ['chamonix', 'https://images.unsplash.com/photo-1601752943749-7dd8d89f407a?w=1920&q=80'], // Mont Blanc valley
+    ['mont blanc', 'https://images.unsplash.com/photo-1601752943749-7dd8d89f407a?w=1920&q=80'],
+    ['alps', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80'], // Swiss Alps
     ['rome', 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1920&q=80'],
     ['paris', 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1920&q=80'],
     ['tokyo', 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1920&q=80'],
