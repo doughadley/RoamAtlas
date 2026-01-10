@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Trip, getTrips, getTrip, setCurrentTrip as setStoredCurrentTrip, getPreferences } from '@/lib/dataService';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { Trip } from '@/types';
+import { getTrips, getTrip, setCurrentTrip as setStoredCurrentTrip, getPreferences } from '@/lib/dataService';
 
 interface TripContextState {
     trips: Trip[];
@@ -22,12 +23,7 @@ export function TripProvider({ children }: TripProviderProps) {
     const [currentTrip, setCurrentTripState] = useState<Trip | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load trips on mount
-    useEffect(() => {
-        loadTrips();
-    }, []);
-
-    const loadTrips = () => {
+    const loadTrips = useCallback(() => {
         setIsLoading(true);
         try {
             const allTrips = getTrips();
@@ -44,13 +40,18 @@ export function TripProvider({ children }: TripProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    const refreshTrips = () => {
+    // Load trips on mount
+    useEffect(() => {
         loadTrips();
-    };
+    }, [loadTrips]);
 
-    const setCurrentTrip = (tripId: string | null) => {
+    const refreshTrips = useCallback(() => {
+        loadTrips();
+    }, [loadTrips]);
+
+    const setCurrentTrip = useCallback((tripId: string | null) => {
         setStoredCurrentTrip(tripId || undefined);
         if (tripId) {
             const trip = getTrip(tripId);
@@ -58,7 +59,7 @@ export function TripProvider({ children }: TripProviderProps) {
         } else {
             setCurrentTripState(null);
         }
-    };
+    }, []);
 
     const value: TripContextState = {
         trips,
