@@ -5,17 +5,9 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
     MapPin,
-    Plane,
-    Building2,
-    Car,
-    Train,
-    Ticket,
-    Receipt,
     LayoutDashboard,
     PlusCircle,
-    Settings,
-    ChevronRight,
-    Calendar
+    Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrips } from '@/contexts/TripContext';
@@ -28,18 +20,6 @@ export default function Sidebar() {
     const { currentTrip, trips } = useTrips();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showTripModal, setShowTripModal] = useState(false);
-
-    // Generate navigation items based on current trip
-    const tripNavItems = currentTrip ? [
-        { href: `/trips/${currentTrip.id}`, icon: LayoutDashboard, label: 'Overview' },
-        { href: `/trips/${currentTrip.id}/calendar`, icon: Calendar, label: 'Calendar' },
-        { href: `/trips/${currentTrip.id}/flights`, icon: Plane, label: 'Flights' },
-        { href: `/trips/${currentTrip.id}/accommodations`, icon: Building2, label: 'Accommodations' },
-        { href: `/trips/${currentTrip.id}/cars`, icon: Car, label: 'Car Rental' },
-        { href: `/trips/${currentTrip.id}/trains`, icon: Train, label: 'Trains' },
-        { href: `/trips/${currentTrip.id}/excursions`, icon: Ticket, label: 'Excursions' },
-        { href: `/trips/${currentTrip.id}/expenses`, icon: Receipt, label: 'Expenses' },
-    ] : [];
 
     return (
         <>
@@ -88,7 +68,7 @@ export default function Sidebar() {
                         </h2>
                         {currentTrip ? (
                             <Link href={`/trips/${currentTrip.id}`}>
-                                <div className="glass-card p-3 mb-4 hover:bg-[var(--bg-glass-hover)]">
+                                <div className="glass-card p-3 hover:bg-[var(--bg-glass-hover)]">
                                     <div className="flex items-center gap-2">
                                         <MapPin className="w-4 h-4 text-[var(--accent-cyan)]" />
                                         <p className="text-sm font-medium text-[var(--text-primary)] truncate">
@@ -98,10 +78,13 @@ export default function Sidebar() {
                                     <p className="text-xs text-[var(--text-muted)] mt-1 truncate">
                                         {currentTrip.primaryDestination}
                                     </p>
+                                    <p className="text-xs text-[var(--text-muted)] mt-1">
+                                        {new Date(currentTrip.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(currentTrip.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </p>
                                 </div>
                             </Link>
                         ) : (
-                            <div className="glass-card p-3 mb-4">
+                            <div className="glass-card p-3">
                                 {isAuthenticated ? (
                                     <>
                                         <p className="text-sm font-medium text-[var(--text-primary)]">No trip selected</p>
@@ -116,30 +99,6 @@ export default function Sidebar() {
                             </div>
                         )}
                     </div>
-
-                    {/* Trip Navigation - Only show if trip selected */}
-                    {currentTrip && (
-                        <nav className="space-y-1">
-                            {tripNavItems.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = pathname === item.href;
-
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`nav-item justify-between ${isActive ? 'active' : ''}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Icon className="w-5 h-5" />
-                                            <span>{item.label}</span>
-                                        </div>
-                                        <ChevronRight className={`w-4 h-4 opacity-0 transition-opacity ${isActive ? 'opacity-100' : ''}`} />
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    )}
                 </div>
 
                 {/* Settings Footer */}

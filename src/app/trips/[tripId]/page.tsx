@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel } from '@/components/layout';
+import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { useTrips } from '@/contexts/TripContext';
-import { Trip, getTrip, getTripStats } from '@/lib/dataService';
+import { Trip } from '@/types';
+import { getTrip, getTripStats } from '@/lib/dataService';
 import {
     MapPin,
     Calendar,
@@ -115,6 +116,9 @@ export default function TripOverviewPage() {
                     </button>
                 }
             >
+                {/* Trip Navigation Tabs */}
+                <TripTabs tripId={tripId} />
+
                 {/* Trip Info Card */}
                 <div className="glass-panel p-6 mb-8">
                     <div className="flex flex-wrap items-center gap-6">

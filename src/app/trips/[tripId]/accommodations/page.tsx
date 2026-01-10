@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel } from '@/components/layout';
+import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { AccommodationModal } from '@/components/bookings';
-import { Accommodation, getAccommodations, deleteAccommodation, getTrip } from '@/lib/dataService';
+import { Accommodation } from '@/types';
+import { getAccommodations, deleteAccommodation, getTrip } from '@/lib/dataService';
 import { Plus, Building2, ArrowLeft, MapPin, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,12 +47,11 @@ export default function AccommodationsPage() {
                 title="Accommodations"
                 subtitle={tripName}
                 actions={
-                    <div className="flex items-center gap-3">
-                        <Link href={`/trips/${tripId}`} className="glass-button flex items-center gap-2 text-sm"><ArrowLeft className="w-4 h-4" /> Back</Link>
-                        <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Add Stay</button>
-                    </div>
+                    <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Add Stay</button>
                 }
             >
+                <TripTabs tripId={tripId} />
+
                 {accommodations.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-6">
                         {accommodations.map((item) => (

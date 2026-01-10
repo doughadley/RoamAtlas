@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel } from '@/components/layout';
+import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { FlightModal, FlightCard } from '@/components/bookings';
-import { Flight, getFlights, deleteFlight, getTrip } from '@/lib/dataService';
+import { Flight } from '@/types';
+import { getFlights, deleteFlight, getTrip } from '@/lib/dataService';
 import { Plus, Plane, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -54,16 +55,13 @@ export default function FlightsPage() {
                 title="Flights"
                 subtitle={tripName}
                 actions={
-                    <div className="flex items-center gap-3">
-                        <Link href={`/trips/${tripId}`} className="glass-button flex items-center gap-2 text-sm">
-                            <ArrowLeft className="w-4 h-4" /> Back
-                        </Link>
-                        <button onClick={handleAddFlight} className="btn-primary flex items-center gap-2">
-                            <Plus className="w-5 h-5" /> Add Flight
-                        </button>
-                    </div>
+                    <button onClick={handleAddFlight} className="btn-primary flex items-center gap-2">
+                        <Plus className="w-5 h-5" /> Add Flight
+                    </button>
                 }
             >
+                <TripTabs tripId={tripId} />
+
                 {flights.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-6">
                         {flights.map((flight) => (

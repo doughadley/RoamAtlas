@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { Sidebar, MainPanel } from '@/components/layout';
+import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { TripCalendar, aggregateCalendarEvents } from '@/components/calendar';
 import { Trip } from '@/types';
 import { getTrip, getFlights, getAccommodations, getExcursions, getCars, getTrains } from '@/lib/dataService';
@@ -72,12 +72,9 @@ export default function CalendarPage() {
             <MainPanel
                 title="Trip Calendar"
                 subtitle={trip.name}
-                actions={
-                    <Link href={`/trips/${tripId}`} className="glass-button flex items-center gap-2 text-sm">
-                        <ArrowLeft className="w-4 h-4" /> Back to Overview
-                    </Link>
-                }
             >
+                <TripTabs tripId={tripId} />
+
                 {calendarEvents.length > 0 ? (
                     <TripCalendar
                         events={calendarEvents}
