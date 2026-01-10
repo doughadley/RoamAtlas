@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, MapPin, Calendar, FileText, Plane } from 'lucide-react';
-import { Trip, createTrip, updateTrip } from '@/lib/dataService';
+import { Trip } from '@/types';
+import { createTrip, updateTrip } from '@/lib/dataService';
 
 interface TripModalProps {
     isOpen: boolean;
@@ -24,6 +25,8 @@ export default function TripModal({ isOpen, onClose, trip, onSave }: TripModalPr
 
     // Populate form when editing
     useEffect(() => {
+        if (!isOpen) return;
+
         if (trip) {
             setName(trip.name);
             setDestination(trip.primaryDestination);
@@ -39,7 +42,7 @@ export default function TripModal({ isOpen, onClose, trip, onSave }: TripModalPr
             setNotes('');
         }
         setError('');
-    }, [trip, isOpen]);
+    }, [trip?.id, isOpen]);
 
     if (!isOpen) return null;
 
