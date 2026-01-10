@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs, TripBackground } from '@/components/layout';
 import { ExpenseSummary, ExpenseList, ExpenseModal } from '@/components/expenses';
-import { getExpenses, getTrip, deleteExpense, Trip, Expense } from '@/lib/dataService';
+import { getExpenses, getTrip, deleteExpense } from '@/lib/dataService';
+import { Trip, Expense } from '@/types';
 import { Plus } from 'lucide-react';
 
 export default function ExpensesPage() {
