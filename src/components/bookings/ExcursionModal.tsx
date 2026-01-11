@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Ticket, MapPin, Clock, DollarSign } from 'lucide-react';
-import { Excursion, createExcursion, updateExcursion } from '@/lib/dataService';
+import { createExcursion, updateExcursion } from '@/lib/dataService';
+import { Excursion } from '@/types';
 
 interface ExcursionModalProps {
     isOpen: boolean;

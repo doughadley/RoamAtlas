@@ -3,15 +3,39 @@
 import { Expense } from '@/types';
 import { DollarSign, PieChart, TrendingUp } from 'lucide-react';
 
+interface CombinedExpense {
+    id: string;
+    date: string;
+    description: string;
+    category: string;
+    amount: number;
+    currency: string;
+    source: string;
+    isEditable: boolean;
+}
+
 interface ExpenseSummaryProps {
     expenses: Expense[];
+    allExpenses?: CombinedExpense[];
     currency?: string;
 }
 
-export default function ExpenseSummary({ expenses, currency = 'USD' }: ExpenseSummaryProps) {
-    const totalCost = expenses.reduce((sum, e) => sum + e.amount, 0);
+export default function ExpenseSummary({ expenses, allExpenses, currency = 'USD' }: ExpenseSummaryProps) {
+    // Use combined expenses if available, otherwise fall back to manual expenses
+    const displayExpenses = allExpenses || expenses.map(e => ({
+        id: e.id,
+        date: e.date,
+        description: e.description,
+        category: e.category,
+        amount: e.amount,
+        currency: e.currency,
+        source: 'manual',
+        isEditable: true
+    }));
 
-    const categoryTotals = expenses.reduce((acc, expense) => {
+    const totalCost = displayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const categoryTotals = displayExpenses.reduce((acc, expense) => {
         acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
         return acc;
     }, {} as Record<string, number>);
@@ -52,7 +76,7 @@ export default function ExpenseSummary({ expenses, currency = 'USD' }: ExpenseSu
                         {formatCurrency(totalCost)}
                     </div>
                     <p className="text-[var(--text-muted)] text-sm mt-2">
-                        {expenses.length} transaction{expenses.length !== 1 ? 's' : ''} recorded
+                        {displayExpenses.length} transaction{displayExpenses.length !== 1 ? 's' : ''} recorded
                     </p>
                 </div>
             </div>
@@ -86,7 +110,7 @@ export default function ExpenseSummary({ expenses, currency = 'USD' }: ExpenseSu
                             </div>
                         );
                     })}
-                    {expenses.length === 0 && (
+                    {displayExpenses.length === 0 && (
                         <div className="text-center py-4 text-[var(--text-muted)] text-sm italic">
                             No expenses recorded yet. Note down your first purchase!
                         </div>

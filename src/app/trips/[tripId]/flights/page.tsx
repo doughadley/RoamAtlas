@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
-import { FlightModal, FlightCard } from '@/components/bookings';
+import { FlightModal, FlightCard, FlightImportModal } from '@/components/bookings';
 import { Flight } from '@/types';
 import { getFlights, deleteFlight, getTrip } from '@/lib/dataService';
-import { Plus, Plane, ArrowLeft } from 'lucide-react';
+import { Plus, Plane, ArrowLeft, Upload } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FlightsPage() {
@@ -15,6 +15,7 @@ export default function FlightsPage() {
 
     const [flights, setFlights] = useState<Flight[]>([]);
     const [showModal, setShowModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
     const [tripName, setTripName] = useState('');
 
@@ -24,9 +25,9 @@ export default function FlightsPage() {
         if (trip) setTripName(trip.name);
     }, [tripId]);
 
+    // ... loadFlights ...
     const loadFlights = () => {
         const data = getFlights(tripId);
-        // Sort by departure time
         data.sort((a, b) => new Date(a.departureDateTime).getTime() - new Date(b.departureDateTime).getTime());
         setFlights(data);
     };
@@ -55,9 +56,15 @@ export default function FlightsPage() {
                 title="Flights"
                 subtitle={tripName}
                 actions={
-                    <button onClick={handleAddFlight} className="btn-primary flex items-center gap-2">
-                        <Plus className="w-5 h-5" /> Add Flight
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={() => setShowImportModal(true)} className="btn-glass flex items-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            <span className="hidden sm:inline">Import</span>
+                        </button>
+                        <button onClick={handleAddFlight} className="btn-primary flex items-center gap-2">
+                            <Plus className="w-5 h-5" /> Add Flight
+                        </button>
+                    </div>
                 }
             >
                 <TripTabs tripId={tripId} />
@@ -79,10 +86,15 @@ export default function FlightsPage() {
                             <Plane className="w-10 h-10 text-[var(--accent-blue)]" />
                         </div>
                         <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">No flights yet</h2>
-                        <p className="text-[var(--text-secondary)] mb-6">Add your first flight to start organizing your trip.</p>
-                        <button onClick={handleAddFlight} className="btn-primary">
-                            <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> Add Flight</span>
-                        </button>
+                        <p className="text-[var(--text-secondary)] mb-6">Add your first flight or import from email.</p>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={() => setShowImportModal(true)} className="btn-secondary flex items-center gap-2">
+                                <Upload className="w-4 h-4" /> Import from Text
+                            </button>
+                            <button onClick={handleAddFlight} className="btn-primary flex items-center gap-2">
+                                <Plus className="w-4 h-4" /> Add Flight
+                            </button>
+                        </div>
                     </div>
                 )}
             </MainPanel>
@@ -93,6 +105,13 @@ export default function FlightsPage() {
                 tripId={tripId}
                 flight={editingFlight}
                 onSave={loadFlights}
+            />
+
+            <FlightImportModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                tripId={tripId}
+                onImport={loadFlights}
             />
         </>
     );

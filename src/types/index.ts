@@ -54,13 +54,15 @@ export interface CarRental {
 export interface Train {
     id: string;
     tripId: string;
+    type: 'train' | 'bus';
     origin: string;
     destination: string;
     operator: string;
-    trainNumber: string;
+    serviceNumber: string;
     departureDateTime: string;
     arrivalDateTime: string;
     seatInfo?: string;
+    confirmationNumber?: string;
     costAmount?: number;
     costCurrency?: string;
 }

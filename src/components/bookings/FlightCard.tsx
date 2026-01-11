@@ -1,6 +1,7 @@
 'use client';
 
-import { Flight, deleteFlight } from '@/lib/dataService';
+import { deleteFlight } from '@/lib/dataService';
+import { Flight } from '@/types';
 import { Plane, Clock, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 

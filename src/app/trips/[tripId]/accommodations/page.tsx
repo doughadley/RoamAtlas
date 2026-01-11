@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
-import { AccommodationModal } from '@/components/bookings';
+import { AccommodationModal, AccommodationImportModal } from '@/components/bookings';
 import { Accommodation } from '@/types';
 import { getAccommodations, deleteAccommodation, getTrip } from '@/lib/dataService';
-import { Plus, Building2, ArrowLeft, MapPin, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Building2, ArrowLeft, MapPin, Calendar, MoreVertical, Edit, Trash2, Upload } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AccommodationsPage() {
@@ -15,6 +15,7 @@ export default function AccommodationsPage() {
 
     const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
     const [showModal, setShowModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [editing, setEditing] = useState<Accommodation | null>(null);
     const [tripName, setTripName] = useState('');
 
@@ -47,7 +48,15 @@ export default function AccommodationsPage() {
                 title="Accommodations"
                 subtitle={tripName}
                 actions={
-                    <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Add Stay</button>
+                    <div className="flex gap-2">
+                        <button onClick={() => setShowImportModal(true)} className="btn-glass flex items-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            <span className="hidden sm:inline">Import PDF</span>
+                        </button>
+                        <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary flex items-center gap-2">
+                            <Plus className="w-5 h-5" /> Add Stay
+                        </button>
+                    </div>
                 }
             >
                 <TripTabs tripId={tripId} />
@@ -90,12 +99,20 @@ export default function AccommodationsPage() {
                             <Building2 className="w-10 h-10 text-[var(--accent-green)]" />
                         </div>
                         <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">No accommodations yet</h2>
-                        <p className="text-[var(--text-secondary)] mb-6">Add your first hotel or stay.</p>
-                        <button onClick={() => setShowModal(true)} className="btn-primary"><span className="flex items-center gap-2"><Plus className="w-5 h-5" /> Add Stay</span></button>
+                        <p className="text-[var(--text-secondary)] mb-6">Add your first hotel or import from Booking.com.</p>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={() => setShowImportModal(true)} className="btn-secondary flex items-center gap-2">
+                                <Upload className="w-4 h-4" /> Import PDF
+                            </button>
+                            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+                                <Plus className="w-4 h-4" /> Add Stay
+                            </button>
+                        </div>
                     </div>
                 )}
             </MainPanel>
             <AccommodationModal isOpen={showModal} onClose={() => setShowModal(false)} tripId={tripId} accommodation={editing} onSave={loadData} />
+            <AccommodationImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} tripId={tripId} onImport={loadData} />
         </>
     );
 }

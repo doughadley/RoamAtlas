@@ -499,16 +499,55 @@ export function getCurrentTrip(): Trip | undefined {
 
 export function getTripStats(tripId: string) {
     const data = loadData();
+
+    const flights = data.flights.filter(f => f.tripId === tripId);
+    const accommodations = data.accommodations.filter(a => a.tripId === tripId);
+    const cars = data.cars.filter(c => c.tripId === tripId);
+    const trains = data.trains.filter(t => t.tripId === tripId);
+    const excursions = data.excursions.filter(e => e.tripId === tripId);
+    const expenses = data.expenses.filter(e => e.tripId === tripId);
+
+    // Calculate total expenses using the same logic as Expenses page
+    let totalExpenses = 0;
+
+    // Manual expenses by category
+    const manualFlightExpenses = expenses.filter(e => e.category === 'flight');
+    const manualAccomExpenses = expenses.filter(e => e.category === 'accommodation');
+    const manualTransportExpenses = expenses.filter(e => e.category === 'transport');
+    const manualExcursionExpenses = expenses.filter(e => e.category === 'excursion');
+
+    // Always add manual expenses
+    totalExpenses += expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    // Add flight costs if no manual flight expenses
+    if (manualFlightExpenses.length === 0) {
+        totalExpenses += flights.reduce((sum, f) => sum + (f.costAmount || 0), 0);
+    }
+
+    // Add accommodation costs if no manual accommodation expenses
+    if (manualAccomExpenses.length === 0) {
+        totalExpenses += accommodations.reduce((sum, a) => sum + (a.costAmount || 0), 0);
+    }
+
+    // Add transport costs if no manual transport expenses
+    if (manualTransportExpenses.length === 0) {
+        totalExpenses += trains.reduce((sum, t) => sum + (t.costAmount || 0), 0);
+        totalExpenses += cars.reduce((sum, c) => sum + (c.costAmount || 0), 0);
+    }
+
+    // Add excursion costs if no manual excursion expenses
+    if (manualExcursionExpenses.length === 0) {
+        totalExpenses += excursions.reduce((sum, ex) => sum + (ex.costAmount || 0), 0);
+    }
+
     return {
-        flights: data.flights.filter(f => f.tripId === tripId).length,
-        accommodations: data.accommodations.filter(a => a.tripId === tripId).length,
-        cars: data.cars.filter(c => c.tripId === tripId).length,
-        trains: data.trains.filter(t => t.tripId === tripId).length,
-        excursions: data.excursions.filter(e => e.tripId === tripId).length,
-        expenses: data.expenses.filter(e => e.tripId === tripId).length,
-        totalExpenses: data.expenses
-            .filter(e => e.tripId === tripId)
-            .reduce((sum, e) => sum + e.amount, 0),
+        flights: flights.length,
+        accommodations: accommodations.length,
+        cars: cars.length,
+        trains: trains.length,
+        excursions: excursions.length,
+        expenses: expenses.length,
+        totalExpenses: Math.round(totalExpenses * 100) / 100, // Round to 2 decimals
     };
 }
 

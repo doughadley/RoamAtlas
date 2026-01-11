@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Building2, MapPin, Calendar, DollarSign, Hash } from 'lucide-react';
-import { Accommodation, createAccommodation, updateAccommodation } from '@/lib/dataService';
+import { createAccommodation, updateAccommodation } from '@/lib/dataService';
+import { Accommodation } from '@/types';
 
 interface AccommodationModalProps {
     isOpen: boolean;

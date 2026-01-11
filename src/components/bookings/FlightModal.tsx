@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plane, MapPin, Clock, Hash, DollarSign, Calendar } from 'lucide-react';
-import { Flight, createFlight, updateFlight } from '@/lib/dataService';
+import { createFlight, updateFlight } from '@/lib/dataService';
+import { Flight } from '@/types';
 
 interface FlightModalProps {
     isOpen: boolean;

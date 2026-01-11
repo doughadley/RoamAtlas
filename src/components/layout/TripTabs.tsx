@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
     Calendar,
+    ScrollText,
     Plane,
     Building2,
-    Car,
-    Train,
+    Truck,
     Ticket,
     Receipt
 } from 'lucide-react';
@@ -20,10 +20,10 @@ interface TripTabsProps {
 const tabs = [
     { id: 'overview', href: '', icon: LayoutDashboard, label: 'Overview' },
     { id: 'calendar', href: '/calendar', icon: Calendar, label: 'Calendar' },
+    { id: 'itinerary', href: '/itinerary', icon: ScrollText, label: 'Itinerary' },
     { id: 'flights', href: '/flights', icon: Plane, label: 'Flights' },
     { id: 'accommodations', href: '/accommodations', icon: Building2, label: 'Stays' },
-    { id: 'cars', href: '/cars', icon: Car, label: 'Cars' },
-    { id: 'trains', href: '/trains', icon: Train, label: 'Trains' },
+    { id: 'transportation', href: '/transportation', icon: Truck, label: 'Transport' },
     { id: 'excursions', href: '/excursions', icon: Ticket, label: 'Activities' },
     { id: 'expenses', href: '/expenses', icon: Receipt, label: 'Expenses' },
 ];
