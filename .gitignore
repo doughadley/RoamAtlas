@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Test PDFs and extracted text
+*.pdf
+*.pdf.txt
+bernard.txt
+chinook.txt
+pdf_full.txt
+pdf_output*.txt
+
+# Debug scripts
+/scripts/
