@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { AccommodationModal, AccommodationImportModal } from '@/components/bookings';
+import EmptyState from '@/components/shared/EmptyState';
 import { Accommodation } from '@/types';
 import { getAccommodations, deleteAccommodation, getTrip } from '@/lib/dataService';
 import { Plus, Building2, ArrowLeft, MapPin, Calendar, MoreVertical, Edit, Trash2, Upload } from 'lucide-react';
@@ -94,12 +95,11 @@ export default function AccommodationsPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="glass-panel p-12 text-center">
-                        <div className="w-20 h-20 rounded-2xl bg-[var(--accent-green)]/20 mx-auto mb-6 flex items-center justify-center">
-                            <Building2 className="w-10 h-10 text-[var(--accent-green)]" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">No accommodations yet</h2>
-                        <p className="text-[var(--text-secondary)] mb-6">Add your first hotel or import from Booking.com.</p>
+                    <EmptyState
+                        icon={Building2}
+                        title="No accommodations yet"
+                        description="Add your first hotel or import from Booking.com."
+                    >
                         <div className="flex justify-center gap-4">
                             <button onClick={() => setShowImportModal(true)} className="btn-secondary flex items-center gap-2">
                                 <Upload className="w-4 h-4" /> Import PDF
@@ -108,7 +108,7 @@ export default function AccommodationsPage() {
                                 <Plus className="w-4 h-4" /> Add Stay
                             </button>
                         </div>
-                    </div>
+                    </EmptyState>
                 )}
             </MainPanel>
             <AccommodationModal isOpen={showModal} onClose={() => setShowModal(false)} tripId={tripId} accommodation={editing} onSave={loadData} />

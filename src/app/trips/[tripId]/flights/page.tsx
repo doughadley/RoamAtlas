@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { FlightModal, FlightCard, FlightImportModal } from '@/components/bookings';
+import EmptyState from '@/components/shared/EmptyState';
 import { Flight } from '@/types';
 import { getFlights, deleteFlight, getTrip } from '@/lib/dataService';
 import { Plus, Plane, ArrowLeft, Upload } from 'lucide-react';
@@ -81,12 +82,11 @@ export default function FlightsPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="glass-panel p-12 text-center">
-                        <div className="w-20 h-20 rounded-2xl bg-[var(--accent-blue)]/20 mx-auto mb-6 flex items-center justify-center">
-                            <Plane className="w-10 h-10 text-[var(--accent-blue)]" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">No flights yet</h2>
-                        <p className="text-[var(--text-secondary)] mb-6">Add your first flight or import from email.</p>
+                    <EmptyState
+                        icon={Plane}
+                        title="No flights yet"
+                        description="Add your first flight or import from email."
+                    >
                         <div className="flex justify-center gap-4">
                             <button onClick={() => setShowImportModal(true)} className="btn-secondary flex items-center gap-2">
                                 <Upload className="w-4 h-4" /> Import from Text
@@ -95,7 +95,7 @@ export default function FlightsPage() {
                                 <Plus className="w-4 h-4" /> Add Flight
                             </button>
                         </div>
-                    </div>
+                    </EmptyState>
                 )}
             </MainPanel>
 

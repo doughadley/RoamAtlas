@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs } from '@/components/layout';
 import { ExcursionModal } from '@/components/bookings';
+import EmptyState from '@/components/shared/EmptyState';
 import { Excursion } from '@/types';
 import { getExcursions, deleteExcursion, getTrip } from '@/lib/dataService';
 import { Plus, Ticket, ArrowLeft, MapPin, Clock, Edit, Trash2 } from 'lucide-react';
@@ -96,14 +97,15 @@ export default function ExcursionsPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="glass-panel p-12 text-center">
-                        <div className="w-20 h-20 rounded-2xl bg-[var(--accent-purple)]/20 mx-auto mb-6 flex items-center justify-center">
-                            <Ticket className="w-10 h-10 text-[var(--accent-purple)]" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">{filter === 'all' ? 'No activities yet' : `No ${filter} activities`}</h2>
-                        <p className="text-[var(--text-secondary)] mb-6">Add tours, museums, and activities.</p>
-                        <button onClick={() => setShowModal(true)} className="btn-primary"><span className="flex items-center gap-2"><Plus className="w-5 h-5" /> Add Activity</span></button>
-                    </div>
+                    <EmptyState
+                        icon={Ticket}
+                        title={filter === 'all' ? 'No activities yet' : `No ${filter} activities`}
+                        description="Add tours, museums, and activities."
+                    >
+                        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+                            <Plus className="w-4 h-4" /> Add Activity
+                        </button>
+                    </EmptyState>
                 )}
             </MainPanel>
             <ExcursionModal isOpen={showModal} onClose={() => setShowModal(false)} tripId={tripId} excursion={editing} onSave={loadData} />

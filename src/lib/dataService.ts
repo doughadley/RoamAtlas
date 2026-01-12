@@ -633,10 +633,37 @@ export function exportData(): string {
     return JSON.stringify(loadData(), null, 2);
 }
 
-export function importData(jsonString: string): boolean {
+export function importData(jsonString: string, strategy: 'merge' | 'replace' = 'replace'): boolean {
     try {
-        const data = JSON.parse(jsonString) as DataStore;
-        saveData({ ...defaultData, ...data });
+        const importedData = JSON.parse(jsonString) as DataStore;
+
+        if (strategy === 'replace') {
+            saveData({ ...defaultData, ...importedData });
+            return true;
+        }
+
+        // Merge Strategy
+        const currentData = loadData();
+
+        // Helper to merge arrays uniquely by ID
+        const mergeArrays = <T extends { id: string }>(current: T[], incoming: T[]): T[] => {
+            const map = new Map(current.map(item => [item.id, item]));
+            incoming.forEach(item => map.set(item.id, item)); // Incoming overwrites existing
+            return Array.from(map.values());
+        };
+
+        const mergedData: DataStore = {
+            trips: mergeArrays(currentData.trips, importedData.trips || []),
+            flights: mergeArrays(currentData.flights, importedData.flights || []),
+            accommodations: mergeArrays(currentData.accommodations, importedData.accommodations || []),
+            cars: mergeArrays(currentData.cars, importedData.cars || []),
+            trains: mergeArrays(currentData.trains, importedData.trains || []),
+            excursions: mergeArrays(currentData.excursions, importedData.excursions || []),
+            expenses: mergeArrays(currentData.expenses, importedData.expenses || []),
+            preferences: { ...currentData.preferences, ...importedData.preferences },
+        };
+
+        saveData(mergedData);
         return true;
     } catch (error) {
         console.error('Error importing data:', error);
