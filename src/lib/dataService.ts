@@ -551,6 +551,84 @@ export function getTripStats(tripId: string) {
     };
 }
 
+export interface ExpenseCategory {
+    category: string;
+    amount: number;
+    percentage: number;
+    color: string;
+    label: string;
+    icon: string;
+}
+
+export function getExpenseBreakdown(tripId: string): ExpenseCategory[] {
+    const data = loadData();
+    const stats = getTripStats(tripId);
+
+    // Base categories
+    const categories = [
+        { key: 'flight', label: 'Flights', color: 'var(--accent-blue)', icon: 'plane' },
+        { key: 'accommodation', label: 'Stays', color: 'var(--accent-green)', icon: 'building' },
+        { key: 'transport', label: 'Transport', color: 'var(--accent-orange)', icon: 'car' }, // includes car & train
+        { key: 'excursion', label: 'Activities', color: 'var(--accent-purple)', icon: 'ticket' },
+        { key: 'food', label: 'Food', color: 'var(--accent-red)', icon: 'utensils' },
+        { key: 'other', label: 'Other', color: 'var(--text-muted)', icon: 'receipt' }
+    ];
+
+    const expenses = data.expenses.filter(e => e.tripId === tripId);
+
+    // Calculate totals per category
+    const totals: Record<string, number> = {};
+    categories.forEach(c => totals[c.key] = 0);
+
+    // 1. Add implicit costs from bookings (if not already manual expense)
+    // Flights
+    const flights = data.flights.filter(f => f.tripId === tripId);
+    const manualFlight = expenses.filter(e => e.category === 'flight');
+    if (manualFlight.length === 0) {
+        totals['flight'] += flights.reduce((sum, f) => sum + (f.costAmount || 0), 0);
+    }
+
+    // Accommodations
+    const accoms = data.accommodations.filter(a => a.tripId === tripId);
+    const manualAccom = expenses.filter(e => e.category === 'accommodation');
+    if (manualAccom.length === 0) {
+        totals['accommodation'] += accoms.reduce((sum, a) => sum + (a.costAmount || 0), 0);
+    }
+
+    // Transport (Car + Train)
+    const cars = data.cars.filter(c => c.tripId === tripId);
+    const trains = data.trains.filter(t => t.tripId === tripId);
+    const manualTransport = expenses.filter(e => e.category === 'transport');
+    if (manualTransport.length === 0) {
+        totals['transport'] += cars.reduce((sum, c) => sum + (c.costAmount || 0), 0);
+        totals['transport'] += trains.reduce((sum, t) => sum + (t.costAmount || 0), 0);
+    }
+
+    // Excursions
+    const excursions = data.excursions.filter(e => e.tripId === tripId);
+    const manualExcursion = expenses.filter(e => e.category === 'excursion');
+    if (manualExcursion.length === 0) {
+        totals['excursion'] += excursions.reduce((sum, e) => sum + (e.costAmount || 0), 0);
+    }
+
+    // 2. Add manual expenses
+    expenses.forEach(e => {
+        const cat = categories.find(c => c.key === e.category) ? e.category : 'other';
+        totals[cat] = (totals[cat] || 0) + e.amount;
+    });
+
+    const total = Object.values(totals).reduce((sum, val) => sum + val, 0);
+
+    return categories.map(c => ({
+        category: c.key,
+        label: c.label,
+        amount: totals[c.key],
+        percentage: total > 0 ? (totals[c.key] / total) * 100 : 0,
+        color: c.color,
+        icon: c.icon
+    })).filter(c => c.amount > 0).sort((a, b) => b.amount - a.amount);
+}
+
 export function exportData(): string {
     return JSON.stringify(loadData(), null, 2);
 }

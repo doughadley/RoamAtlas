@@ -5,14 +5,13 @@ import { useParams } from 'next/navigation';
 import { Sidebar, MainPanel, TripTabs, TripBackground } from '@/components/layout';
 import { useTrips } from '@/contexts/TripContext';
 import { Trip } from '@/types';
-import { getTrip, getTripStats } from '@/lib/dataService';
+import { getTrip, getTripStats, getExpenseBreakdown, getFlights, getAccommodations, getCars, getTrains, getExcursions } from '@/lib/dataService';
 import {
     MapPin,
     Calendar,
     Plane,
     Building2,
     Car,
-    Train,
     Ticket,
     Receipt,
     Edit,
@@ -20,6 +19,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { TripModal } from '@/components/trips';
+import JourneyHero from '@/components/overview/JourneyHero';
+import BudgetWidget from '@/components/overview/BudgetWidget';
+import ExpenseWidget from '@/components/overview/ExpenseWidget';
+import UpcomingWidget from '@/components/overview/UpcomingWidget';
+import MapWidget from '@/components/overview/MapWidget';
+import { aggregateCalendarEvents, CalendarEvent } from '@/components/calendar/calendarUtils';
+import FlightModal from '@/components/bookings/FlightModal';
+import AccommodationModal from '@/components/bookings/AccommodationModal';
+import TransportModal from '@/components/bookings/TransportModal';
+import ExcursionModal from '@/components/bookings/ExcursionModal';
+import CarRentalModal from '@/components/bookings/CarRentalModal';
+import { Flight, Accommodation, CarRental, Train, Excursion } from '@/types';
 
 export default function TripOverviewPage() {
     const params = useParams();
@@ -30,6 +41,7 @@ export default function TripOverviewPage() {
     const [stats, setStats] = useState<ReturnType<typeof getTripStats> | null>(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
     useEffect(() => {
         if (tripId) {
@@ -84,15 +96,16 @@ export default function TripOverviewPage() {
     };
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Stat cards configuration
-    const statCards = [
-        { label: 'Flights', value: stats?.flights || 0, icon: Plane, color: 'var(--accent-blue)', href: `/trips/${tripId}/flights` },
-        { label: 'Stays', value: stats?.accommodations || 0, icon: Building2, color: 'var(--accent-green)', href: `/trips/${tripId}/accommodations` },
-        { label: 'Car Rentals', value: stats?.cars || 0, icon: Car, color: 'var(--accent-orange)', href: `/trips/${tripId}/cars` },
-        { label: 'Trains', value: stats?.trains || 0, icon: Train, color: 'var(--accent-orange)', href: `/trips/${tripId}/trains` },
-        { label: 'Activities', value: stats?.excursions || 0, icon: Ticket, color: 'var(--accent-purple)', href: `/trips/${tripId}/excursions` },
-        { label: 'Expenses', value: `$${stats?.totalExpenses || 0}`, icon: Receipt, color: 'var(--text-muted)', href: `/trips/${tripId}/expenses` },
-    ];
+    // Aggregate calendar events for upcoming widget
+    const calendarEvents = aggregateCalendarEvents(
+        getFlights(tripId),
+        getAccommodations(tripId),
+        getExcursions(tripId),
+        getCars(tripId),
+        getTrains(tripId)
+    );
+
+    const expenseBreakdown = getExpenseBreakdown(tripId);
 
     const handleTripUpdated = () => {
         const updatedTrip = getTrip(tripId);
@@ -119,78 +132,73 @@ export default function TripOverviewPage() {
                 {/* Trip Navigation Tabs */}
                 <TripTabs tripId={tripId} />
 
-                {/* Trip Info Card */}
-                <div className="glass-panel p-6 mb-8">
-                    <div className="flex flex-wrap items-center gap-6">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-cyan)] flex items-center justify-center shadow-lg">
-                            <MapPin className="w-8 h-8 text-white" />
+                {/* Dashboard Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Left Main Column */}
+                    <div className="lg:col-span-2 flex flex-col gap-6">
+                        {/* Journey Timeline */}
+                        <div className="h-[400px]">
+                            <JourneyHero trip={trip} events={calendarEvents} onEventClick={setSelectedEvent} />
                         </div>
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Calendar className="w-5 h-5 text-[var(--text-secondary)]" />
-                                <span className="text-[var(--text-primary)]">
-                                    {formatDate(startDate)} — {formatDate(endDate)}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="px-3 py-1 rounded-full bg-[var(--accent-blue)]/20 text-[var(--accent-blue)] text-sm font-medium">
-                                    {duration} {duration === 1 ? 'day' : 'days'}
-                                </span>
-                                {trip.status === 'archived' && (
-                                    <span className="px-3 py-1 rounded-full bg-[var(--text-muted)]/20 text-[var(--text-muted)] text-sm font-medium">
-                                        Archived
-                                    </span>
-                                )}
-                            </div>
+                        {/* Map Explored Cities */}
+                        <div className="h-[300px]">
+                            <MapWidget trip={trip} />
                         </div>
                     </div>
 
-                    {trip.notes && (
-                        <div className="mt-4 pt-4 border-t border-[var(--border-glass)]">
-                            <p className="text-[var(--text-secondary)] text-sm">{trip.notes}</p>
+                    {/* Right Info Column */}
+                    <div className="lg:col-span-1 flex flex-col gap-6">
+                        {/* Budget/Cost Donut */}
+                        <div className="h-[350px]">
+                            <BudgetWidget trip={trip} breakdown={expenseBreakdown} />
                         </div>
-                    )}
+                        {/* Upcoming Events */}
+                        <div className="min-h-[250px]">
+                            <UpcomingWidget events={calendarEvents} />
+                        </div>
+                        {/* Expenses Bar Chart */}
+                        <div className="h-[300px]">
+                            <ExpenseWidget breakdown={expenseBreakdown} />
+                        </div>
+                    </div>
                 </div>
 
-                {/* Stats Grid */}
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">Trip Overview</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                    {statCards.map((stat) => {
-                        const Icon = stat.icon;
-                        return (
-                            <Link key={stat.label} href={stat.href}>
-                                <div className="glass-card p-5 text-center group cursor-pointer h-full">
-                                    <div
-                                        className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center transition-transform group-hover:scale-110"
-                                        style={{ background: `${stat.color}20` }}
-                                    >
-                                        <Icon className="w-6 h-6" style={{ color: stat.color }} />
-                                    </div>
-                                    <p className="text-2xl font-bold text-[var(--text-primary)]">{stat.value}</p>
-                                    <p className="text-sm text-[var(--text-secondary)]">{stat.label}</p>
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </div>
-
-                {/* Quick Actions */}
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">Quick Actions</h2>
+                {/* Quick Actions Footer - moved to a simpler row if needed, or kept as is? 
+                    The design doesn't explicitly show quick actions buttons, but we should keep them for functionality.
+                */}
                 <div className="grid md:grid-cols-3 gap-4">
-                    <Link href={`/trips/${tripId}/flights`} className="glass-card p-6 group">
-                        <Plane className="w-8 h-8 text-[var(--accent-blue)] mb-3" />
-                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Add Flight</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Add your flight bookings</p>
+                    <Link href={`/trips/${tripId}/flights`} className="glass-card p-6 group hover:translate-y-[-2px] transition-transform">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-[var(--accent-blue)]/20 flex items-center justify-center">
+                                <Plane className="w-6 h-6 text-[var(--accent-blue)]" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-[var(--text-primary)]">Add Flight</h3>
+                                <p className="text-xs text-[var(--text-secondary)]">Create a new booking</p>
+                            </div>
+                        </div>
                     </Link>
-                    <Link href={`/trips/${tripId}/accommodations`} className="glass-card p-6 group">
-                        <Building2 className="w-8 h-8 text-[var(--accent-green)] mb-3" />
-                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Add Accommodation</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Add hotels and stays</p>
+                    <Link href={`/trips/${tripId}/accommodations`} className="glass-card p-6 group hover:translate-y-[-2px] transition-transform">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-[var(--accent-green)]/20 flex items-center justify-center">
+                                <Building2 className="w-6 h-6 text-[var(--accent-green)]" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-[var(--text-primary)]">Add Stay</h3>
+                                <p className="text-xs text-[var(--text-secondary)]">Book a hotel room</p>
+                            </div>
+                        </div>
                     </Link>
-                    <Link href={`/trips/${tripId}/excursions`} className="glass-card p-6 group">
-                        <Ticket className="w-8 h-8 text-[var(--accent-purple)] mb-3" />
-                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Add Activity</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Plan tours and excursions</p>
+                    <Link href={`/trips/${tripId}/excursions`} className="glass-card p-6 group hover:translate-y-[-2px] transition-transform">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-[var(--accent-purple)]/20 flex items-center justify-center">
+                                <Ticket className="w-6 h-6 text-[var(--accent-purple)]" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-[var(--text-primary)]">Add Activity</h3>
+                                <p className="text-xs text-[var(--text-secondary)]">Plan an excursion</p>
+                            </div>
+                        </div>
                     </Link>
                 </div>
             </MainPanel>
@@ -202,6 +210,54 @@ export default function TripOverviewPage() {
                 trip={trip}
                 onSave={handleTripUpdated}
             />
+
+            {/* Event Detail Modals */}
+            {selectedEvent?.type === 'flight' && (
+                <FlightModal
+                    isOpen={true}
+                    onClose={() => setSelectedEvent(null)}
+                    tripId={tripId}
+                    flight={selectedEvent.data as Flight}
+                    onSave={handleTripUpdated}
+                />
+            )}
+            {selectedEvent?.type === 'accommodation' && (
+                <AccommodationModal
+                    isOpen={true}
+                    onClose={() => setSelectedEvent(null)}
+                    tripId={tripId}
+                    accommodation={selectedEvent.data as Accommodation}
+                    onSave={handleTripUpdated}
+                />
+            )}
+            {selectedEvent?.type === 'excursion' && (
+                <ExcursionModal
+                    isOpen={true}
+                    onClose={() => setSelectedEvent(null)}
+                    tripId={tripId}
+                    excursion={selectedEvent.data as Excursion}
+                    onSave={handleTripUpdated}
+                />
+            )}
+            {selectedEvent?.type === 'car' && (
+                <CarRentalModal
+                    isOpen={true}
+                    onClose={() => setSelectedEvent(null)}
+                    tripId={tripId}
+                    car={selectedEvent.data as CarRental}
+                    onSave={handleTripUpdated}
+                />
+            )}
+            {selectedEvent?.type === 'train' && (
+                <TransportModal
+                    isOpen={true}
+                    onClose={() => setSelectedEvent(null)}
+                    tripId={tripId}
+                    transport={selectedEvent.data as Train}
+                    defaultType="train"
+                    onSave={handleTripUpdated}
+                />
+            )}
         </TripBackground>
     );
 }

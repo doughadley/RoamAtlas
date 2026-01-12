@@ -32,6 +32,10 @@ export function ItineraryCard({ item }: Props) {
             case 'flight_arrival': return 'border-blue-400/30';
             case 'check_in': return 'border-green-500/50';
             case 'check_out': return 'border-green-400/30';
+            case 'car_pickup': return 'border-orange-500/50';
+            case 'car_dropoff': return 'border-orange-400/30';
+            case 'train_departure': return 'border-orange-500/50';
+            case 'train_arrival': return 'border-orange-400/30';
             case 'activity': return 'border-purple-500/50';
             default: return 'border-white/10';
         }
@@ -43,6 +47,10 @@ export function ItineraryCard({ item }: Props) {
             case 'flight_arrival': return '🛬';
             case 'check_in': return '🏨';
             case 'check_out': return '👋';
+            case 'car_pickup': return '🚗';
+            case 'car_dropoff': return '🔑';
+            case 'train_departure': return '🚆';
+            case 'train_arrival': return '🚆';
             case 'activity': return '🎫';
             default: return '📍';
         }

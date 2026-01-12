@@ -65,7 +65,7 @@ export function aggregateCalendarEvents(
         events.push({
             id: `${acc.id}-in`,
             type: 'accommodation',
-            title: `Check-in: ${acc.propertyName}`,
+            title: `In: ${acc.propertyName}`,
             subtitle: acc.address,
             date: checkIn.toISOString().split('T')[0],
             startTime: checkIn.toTimeString().slice(0, 5),
@@ -78,7 +78,7 @@ export function aggregateCalendarEvents(
         events.push({
             id: `${acc.id}-out`,
             type: 'accommodation',
-            title: `Check-out: ${acc.propertyName}`,
+            title: `Out: ${acc.propertyName}`,
             subtitle: acc.address,
             date: checkOut.toISOString().split('T')[0],
             startTime: checkOut.toTimeString().slice(0, 5),

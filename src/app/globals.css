@@ -11,16 +11,16 @@
   --bg-glass: rgba(15, 30, 60, 0.7);
   --bg-glass-hover: rgba(25, 45, 80, 0.8);
   --bg-glass-active: rgba(35, 55, 95, 0.85);
-  
+
   /* Border colors */
   --border-glass: rgba(100, 150, 255, 0.15);
   --border-glass-hover: rgba(100, 150, 255, 0.25);
-  
+
   /* Text colors */
   --text-primary: #f0f4ff;
   --text-secondary: #8ba3c7;
   --text-muted: #5a7094;
-  
+
   /* Accent colors */
   --accent-blue: #3b82f6;
   --accent-blue-hover: #60a5fa;
@@ -29,20 +29,20 @@
   --accent-orange: #f97316;
   --accent-purple: #a855f7;
   --accent-red: #ef4444;
-  
+
   /* Shadows and effects */
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-glass-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
-  
+
   /* Blur */
   --blur-glass: blur(12px);
   --blur-glass-heavy: blur(20px);
-  
+
   /* Spacing */
   --sidebar-width: 280px;
   --header-height: 64px;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
@@ -81,7 +81,7 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 80%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
@@ -223,7 +223,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-glass);
+  background: rgba(100, 150, 255, 0.5);
   border-radius: 4px;
 }
 
@@ -233,35 +233,49 @@ body::before {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(20px);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes slideIn {
-  from { 
+  from {
     opacity: 0;
     transform: translateX(-20px);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateX(0);
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.5); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  }
 }
 
 .animate-fade-in {
@@ -277,11 +291,25 @@ body::before {
 }
 
 /* Event Type Colors (for calendar) */
-.event-flight { background: var(--accent-blue); }
-.event-accommodation { background: var(--accent-green); }
-.event-transport { background: var(--accent-orange); }
-.event-excursion { background: var(--accent-purple); }
-.event-expense { background: var(--text-muted); }
+.event-flight {
+  background: var(--accent-blue);
+}
+
+.event-accommodation {
+  background: var(--accent-green);
+}
+
+.event-transport {
+  background: var(--accent-orange);
+}
+
+.event-excursion {
+  background: var(--accent-purple);
+}
+
+.event-expense {
+  background: var(--text-muted);
+}
 
 /* Typography */
 .text-gradient {
@@ -291,7 +319,12 @@ body::before {
   background-clip: text;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--text-primary);
   font-weight: 600;
   letter-spacing: -0.02em;
