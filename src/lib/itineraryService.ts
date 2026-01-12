@@ -125,6 +125,48 @@ export function getItineraryItems(tripId: string): ItineraryItem[] {
         });
     });
 
+    // 4. Car Rentals
+    const cars = dataService.getCars(tripId);
+    cars.forEach(c => {
+        // Pickup
+        items.push({
+            id: `car_pickup_${c.id}`,
+            originalId: c.id,
+            tripId: c.tripId,
+            type: 'car_pickup',
+            title: `Car Pickup: ${c.company}`,
+            subtitle: c.pickupLocation,
+            dateTime: c.pickupDateTime,
+            color: '#f97316' // Orange
+        });
+        // Dropoff
+        items.push({
+            id: `car_dropoff_${c.id}`,
+            originalId: c.id,
+            tripId: c.tripId,
+            type: 'car_dropoff',
+            title: `Car Return: ${c.company}`,
+            subtitle: c.dropoffLocation,
+            dateTime: c.dropoffDateTime,
+            color: '#f97316'
+        });
+    });
+
+    // 5. Trains & Buses
+    const trains = dataService.getTrains(tripId);
+    trains.forEach(t => {
+        items.push({
+            id: `train_${t.id}`,
+            originalId: t.id,
+            tripId: t.tripId,
+            type: 'train_departure',
+            title: `${t.type === 'bus' ? '🚌' : '🚆'} ${t.origin} → ${t.destination}`,
+            subtitle: t.operator,
+            dateTime: t.departureDateTime,
+            color: '#f97316' // Orange
+        });
+    });
+
     return items.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
 }
 
@@ -144,6 +186,62 @@ export function getDidItineraryByDay(tripId: string): DayItinerary[] {
     return Object.entries(days)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([date, items]) => ({ date, items }));
+}
+
+/**
+ * Generates the full list of day objects for the itinerary board,
+ * covering the entire trip duration including any out-of-range bookings.
+ */
+export function generateItineraryDays(trip: Trip | undefined, items: ItineraryItem[]): DayItinerary[] {
+    const dayMap: { [key: string]: ItineraryItem[] } = {};
+
+    // 1. Map existing items
+    items.forEach(item => {
+        const dateKey = item.dateTime.split('T')[0];
+        if (!dayMap[dateKey]) dayMap[dateKey] = [];
+        dayMap[dateKey].push(item);
+    });
+
+    console.log(`[ItineraryDebug] Received ${items.length} items.`);
+    console.log(`[ItineraryDebug] Mapped to dates:`, Object.keys(dayMap));
+    // 2. Determine date range
+    let start = trip ? new Date(trip.startDate + 'T00:00:00') : new Date();
+    let end = trip ? new Date(trip.endDate + 'T00:00:00') : new Date();
+
+    // Expand range to include all bookings
+    Object.keys(dayMap).forEach(dateStr => {
+        const d = new Date(dateStr + 'T00:00:00');
+        if (d < start) {
+            start = d;
+        }
+        if (d > end) {
+            end = d;
+        }
+    });
+
+    // 3. Generate continuous days
+    const result: DayItinerary[] = [];
+    const current = new Date(start);
+
+    // Safety break to prevent infinite loops (extended for wide ranges)
+    let safetyCounter = 0;
+    while (current <= end && safetyCounter < 2000) {
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        const day = String(current.getDate()).padStart(2, '0');
+        const dateKey = `${year}-${month}-${day}`;
+
+        result.push({
+            date: dateKey,
+            items: dayMap[dateKey] || []
+        });
+
+        current.setDate(current.getDate() + 1);
+        safetyCounter++;
+    }
+
+    // 4. Sort explicitly (redundant if generation is linear, but safe)
+    return result.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Helper to handle time strings loosely (e.g. "2:00 PM" -> "14:00:00")
@@ -210,6 +308,33 @@ export function updateItemDate(item: ItineraryItem, newDate: string): void {
             if (exc) {
                 dataService.updateExcursion(exc.id, {
                     date: newDate
+                });
+            }
+            break;
+        }
+        case 'car_pickup': {
+            const car = dataService.getCars(item.tripId).find(c => c.id === item.originalId);
+            if (car) {
+                dataService.updateCar(car.id, {
+                    pickupDateTime: updateDateTime(car.pickupDateTime)
+                });
+            }
+            break;
+        }
+        case 'car_dropoff': {
+            const car = dataService.getCars(item.tripId).find(c => c.id === item.originalId);
+            if (car) {
+                dataService.updateCar(car.id, {
+                    dropoffDateTime: updateDateTime(car.dropoffDateTime)
+                });
+            }
+            break;
+        }
+        case 'train_departure': {
+            const train = dataService.getTrains(item.tripId).find(t => t.id === item.originalId);
+            if (train) {
+                dataService.updateTrain(train.id, {
+                    departureDateTime: updateDateTime(train.departureDateTime)
                 });
             }
             break;

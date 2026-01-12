@@ -141,7 +141,7 @@ export default function TripCalendar({ events, tripStartDate, tripEndDate, onEve
                                             title={event.title}
                                         >
                                             <Icon className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">{event.startTime && `${event.startTime} `}{event.title.split(':')[0]}</span>
+                                            <span className="truncate">{event.startTime && `${event.startTime} `}{event.title}</span>
                                         </div>
                                     );
                                 })}

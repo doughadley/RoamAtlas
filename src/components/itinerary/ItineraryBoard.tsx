@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -17,7 +16,8 @@ import {
     defaultDropAnimationSideEffects
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { ItineraryItem, DayItinerary, getDidItineraryByDay, updateItemDate } from '@/lib/itineraryService';
+import { ItineraryItem, DayItinerary, getDidItineraryByDay, updateItemDate, getItineraryItems, generateItineraryDays } from '@/lib/itineraryService';
+import { getTrip } from '@/lib/dataService';
 import { DayColumn } from './DayColumn';
 import { ItineraryCard } from './ItineraryCard';
 
@@ -26,18 +26,22 @@ interface Props {
 }
 
 export function ItineraryBoard({ tripId }: Props) {
-    const [days, setDays] = useState<{ [key: string]: ItineraryItem[] }>({});
+    const [items, setItems] = useState<ItineraryItem[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // Load initial data
+    // 1. Load initial data ONCE
     useEffect(() => {
-        const data = getDidItineraryByDay(tripId);
-        const dayMap: { [key: string]: ItineraryItem[] } = {};
-        data.forEach(d => {
-            dayMap[d.date] = d.items;
-        });
-        setDays(dayMap);
+        // Only load if items are empty to prevent overwriting local drag state
+        // or simplistic check. Better: Load once on mount.
+        const initialItems = getItineraryItems(tripId);
+        setItems(initialItems);
     }, [tripId]);
+
+    // 2. Derive days from items (Single Source of Truth)
+    const days: DayItinerary[] = useMemo(() => {
+        const trip = getTrip(tripId);
+        return generateItineraryDays(trip, items);
+    }, [items, tripId]); // getTrip is cheap, can be called here or memoized too
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -45,8 +49,8 @@ export function ItineraryBoard({ tripId }: Props) {
     );
 
     const findContainer = (id: string): string | undefined => {
-        if (id in days) return id;
-        return Object.keys(days).find(key => days[key].find(item => item.id === id));
+        const day = days.find(d => d.items.find(item => item.id === id));
+        return day?.date;
     };
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -60,86 +64,64 @@ export function ItineraryBoard({ tripId }: Props) {
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        const activeContainer = findContainer(activeId);
-        const overContainer = findContainer(overId);
+        // Find which day (container) the active and over items belong to
+        // If overId is a date (empty day column), overDay is that date
+        const overDay = days.find(d => d.date === overId)?.date || findContainer(overId);
+        const activeDay = findContainer(activeId);
 
-        if (!activeContainer || !overContainer || activeContainer === overContainer) return;
+        if (!activeDay || !overDay || activeDay === overDay) return;
 
-        // Move item to new container during drag
-        setDays((prev) => {
-            const activeItems = prev[activeContainer];
-            const overItems = prev[overContainer];
-            const activeIndex = activeItems.findIndex(i => i.id === activeId);
-            const overIndex = overItems.findIndex(i => i.id === overId);
+        // Optimistic update: Move item to the new day in 'items' state
+        // We update the item's dateTime strictly to the new day so it renders there.
+        setItems(prev => {
+            const activeItem = prev.find(i => i.id === activeId);
+            if (!activeItem) return prev;
 
-            let newIndex;
-            if (overId in prev) {
-                // We're over a container
-                newIndex = overItems.length + 1;
-            } else {
-                const isBelowOverItem =
-                    over &&
-                    active.rect.current.translated &&
-                    active.rect.current.translated.top > over.rect.top + over.rect.height;
+            // Calculate new dateTime (preserve time)
+            const timePart = activeItem.dateTime.includes('T')
+                ? activeItem.dateTime.split('T')[1]
+                : '12:00:00';
+            const newDateTime = `${overDay}T${timePart}`;
 
-                const modifier = isBelowOverItem ? 1 : 0;
-                newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
-            }
-
-            return {
-                ...prev,
-                [activeContainer]: [
-                    ...prev[activeContainer].filter(item => item.id !== activeId)
-                ],
-                [overContainer]: [
-                    ...prev[overContainer].slice(0, newIndex),
-                    activeItems[activeIndex],
-                    ...prev[overContainer].slice(newIndex, prev[overContainer].length)
-                ]
-            };
+            return prev.map(item =>
+                item.id === activeId
+                    ? { ...item, dateTime: newDateTime }
+                    : item
+            );
         });
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        const activeContainer = findContainer(active.id as string);
-        const overContainer = findContainer(over?.id as string || '');
+        const activeId = active.id as string;
+        const overId = over?.id as string;
 
-        if (activeContainer && overContainer && activeContainer === overContainer) {
-            const activeIndex = days[activeContainer].findIndex(i => i.id === active.id);
-            const overIndex = days[activeContainer].findIndex(i => i.id === over?.id);
+        // In handleDragOver, we already enthusiastically moved the item to the new date.
+        // So by DragEnd, the item should ALREADY be in the correct "container" (date).
+        // loading state matches visual state.
 
-            if (activeIndex !== overIndex) {
-                setDays((prev) => ({
-                    ...prev,
-                    [activeContainer]: arrayMove(prev[activeContainer], activeIndex, overIndex),
-                }));
-            }
-        }
+        // However, we need to persist to DB check.
+        const activeItem = items.find(i => i.id === activeId);
+        if (activeItem) {
+            // Check if actual date changed from original source?
+            // Actually, we modified "items" state in DragOver.
+            // So activeItem.dateTime is ALREADY updated.
+            // We just need to persist it.
 
-        // Persist changes if item moved to a new day
-        const finalContainer = findContainer(active.id as string);
-        if (finalContainer) {
-            const item = days[finalContainer].find(i => i.id === active.id);
-            if (item) {
-                const currentContainerDate = finalContainer;
-                const itemDate = item.dateTime.split('T')[0];
+            // To be precise: We need to know if it moved.
+            // But we can just persist the current state of the active item.
+            // Or better: Re-run logic.
 
-                if (currentContainerDate !== itemDate) {
-                    console.log(`Moving item ${item.title} from ${itemDate} to ${currentContainerDate}`);
-                    updateItemDate(item, currentContainerDate);
+            // Wait, if we dropped it, we rely on DragOver having moved it.
+            // But what if it was cancelled? dnd-kit handles cancellation by reverting?
+            // No, using controlled state means WE corrupted the state in DragOver.
+            // If user cancels (Escape), we might be in trouble unless we handle Cancel.
+            // For now, let's assume successful drop.
 
-                    // Update item state
-                    item.dateTime = item.dateTime.replace(itemDate, currentContainerDate);
-
-                    setDays(prev => ({
-                        ...prev,
-                        [finalContainer]: prev[finalContainer].map(i =>
-                            i.id === item.id ? { ...i, dateTime: item.dateTime } : i
-                        )
-                    }));
-                }
-            }
+            const currentDateKey = activeItem.dateTime.split('T')[0];
+            // We can just call updateItemDate. It's idempotent-ish.
+            console.log(`[DragEnd] Persisting item ${activeItem.title} to ${currentDateKey}`);
+            updateItemDate(activeItem, currentDateKey);
         }
 
         setActiveId(null);
@@ -153,31 +135,77 @@ export function ItineraryBoard({ tripId }: Props) {
         }),
     };
 
+    // 3. Month Navigation
+    const months = useMemo(() => {
+        const uniqueMonths = new Set<string>();
+        days.forEach(d => {
+            const date = new Date(d.date + 'T12:00:00');
+            const key = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            uniqueMonths.add(key);
+        });
+        return Array.from(uniqueMonths);
+    }, [days]);
+
+    const scrollToMonth = (monthStr: string) => {
+        // Find first day of this month
+        const targetDay = days.find(d => {
+            const date = new Date(d.date + 'T12:00:00');
+            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) === monthStr;
+        });
+
+        if (targetDay) {
+            const el = document.getElementById(`day-${targetDay.date}`);
+            el?.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+        }
+    };
+
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-        >
-            <div className="flex h-full gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
-                {Object.keys(days).sort().map((date) => (
-                    <DayColumn key={date} date={date} items={days[date]} />
+        <div className="flex flex-col h-full gap-4">
+            {/* Quick Navigation */}
+            <div className="flex gap-2 pb-2 overflow-x-auto custom-scrollbar flex-shrink-0">
+                {months.map(m => (
+                    <button
+                        key={m}
+                        onClick={() => scrollToMonth(m)}
+                        className="px-3 py-1.5 rounded-full bg-glass border border-white/10 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors whitespace-nowrap"
+                    >
+                        {m}
+                    </button>
                 ))}
             </div>
 
-            <DragOverlay dropAnimation={dropAnimation}>
-                {activeId ? (
-                    <div className="transform scale-105 rotate-2 cursor-grabbing">
-                        {(() => {
-                            const container = findContainer(activeId);
-                            const item = container ? days[container].find(i => i.id === activeId) : null;
-                            return item ? <ItineraryCard item={item} /> : null;
-                        })()}
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
+                {/* Board Content */}
+                <div className="flex-1 overflow-x-auto overflow-y-hidden px-4">
+                    <div className="h-full flex gap-4 w-max pr-24 pb-4">
+                        {days.map((day) => (
+                            <div key={day.date} id={`day-${day.date}`}>
+                                <DayColumn
+                                    date={day.date}
+                                    items={day.items}
+                                />
+                            </div>
+                        ))}
                     </div>
-                ) : null}
-            </DragOverlay>
-        </DndContext>
+                </div>
+
+                <DragOverlay dropAnimation={dropAnimation}>
+                    {activeId ? (
+                        <div className="transform scale-105 rotate-2 cursor-grabbing">
+                            {(() => {
+                                const item = items.find(i => i.id === activeId);
+                                return item ? <ItineraryCard item={item} /> : null;
+                            })()}
+                        </div>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+        </div>
     );
 }

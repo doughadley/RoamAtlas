@@ -44,7 +44,8 @@ export default function ItineraryPage() {
                 >
                     <TripTabs tripId={tripId} />
 
-                    <div className="h-[calc(100vh-200px)] mt-6">
+                    {/* Constrain container width for horizontal scroll */}
+                    <div className="h-[calc(100vh-200px)] mt-6 w-full max-w-[calc(100vw-360px)] bg-black/20 border border-white/5 backdrop-blur-sm">
                         <ItineraryBoard tripId={tripId} />
                     </div>
                 </MainPanel>
